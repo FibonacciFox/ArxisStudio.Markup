@@ -7,6 +7,7 @@ using System.Text.Json;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Text;
 using AvaloniaDesigner.Generator.Models;
+using System.Collections.Generic;
 
 namespace AvaloniaDesigner.Generator
 {
@@ -88,7 +89,8 @@ namespace AvaloniaDesigner.Generator
             sb.AppendLine($"namespace {ns}");
             sb.AppendLine("{");
             sb.AppendLine("    [global::System.CodeDom.Compiler.GeneratedCode(\"AvaloniaDesigner.Generator\", \"1.0.0.0\")]");
-            sb.AppendLine($"    public partial class {model.FormName}");
+            // Наследование от ParentClassType
+            sb.AppendLine($"    public partial class {model.FormName} : global::{model.ParentClassType}"); 
             sb.AppendLine("    {");
 
             // Поля контролов
@@ -101,13 +103,46 @@ namespace AvaloniaDesigner.Generator
             sb.AppendLine("        public void InitializeComponent()");
             sb.AppendLine("        {");
 
-            // Корневой контейнер
-            string rootContainerType = model.RootContainer.Type;
-            sb.AppendLine($"            global::{rootContainerType} root = new global::{rootContainerType}();");
+            // --- 1. Определение режима генерации (Режим A или Режим B) ---
+            var parentTypeSymbol = ResolveType(compilation, model.ParentClassType);
+            var parentContentProperty = parentTypeSymbol is null
+                ? null
+                : FindContentProperty(parentTypeSymbol, compilation);
+            
+            // Получаем имя свойства [Content] родительской формы для финального присвоения
+            string parentContentPropertyName = parentContentProperty?.Name ?? "Content"; 
+            
+            // Является ли родительский класс коллекционным контейнером?
+            bool parentIsCollectionContainer = parentContentProperty is not null && IsCollectionType(parentContentProperty.Type, compilation);
+            
+            // Должны ли мы использовать `this` как корневой контейнер (Режим B)?
+            // (Сработает для Canvas, Grid, ListBox, если они совпадают с RootContainer.Type)
+            bool reuseThisAsRoot = model.ParentClassType.Equals(model.RootContainer.Type, StringComparison.Ordinal) && parentIsCollectionContainer;
 
-            var rootTypeSymbol = ResolveType(compilation, rootContainerType);
+            
+            string rootVarName = "root";
+            string targetVarName = "this";
+            
+            // 2. Создание или использование корневого контейнера
+            if (reuseThisAsRoot)
+            {
+                // Режим B: Используем `this` как корневой контейнер.
+                rootVarName = "this";
+                targetVarName = "this";
+            }
+            else
+            {
+                // Режим A: Создаем отдельный корневой контейнер.
+                string rootContainerType = model.RootContainer.Type;
+                sb.AppendLine($"            global::{rootContainerType} {rootVarName} = new global::{rootContainerType}();");
+                targetVarName = rootVarName;
+            }
 
-            // Свойства корня
+            // 3. Присвоение свойств корневого контейнера
+            var rootTypeSymbol = reuseThisAsRoot 
+                ? parentTypeSymbol 
+                : ResolveType(compilation, model.RootContainer.Type);
+            
             foreach (var prop in model.RootContainer.Properties)
             {
                 IPropertySymbol? propSymbol = rootTypeSymbol is null
@@ -120,26 +155,33 @@ namespace AvaloniaDesigner.Generator
                     compilation,
                     prop.Key);
 
-                sb.AppendLine($"            root.{prop.Key} = {valueExpr};");
+                // Применяем свойства либо к 'this', либо к 'root'
+                sb.AppendLine($"            {targetVarName}.{prop.Key} = {valueExpr};"); 
             }
-
-            // --- Ключевая логика: Поиск Content-свойства ---
+            
+            // --- 4. Логика добавления дочерних элементов в Target (root или this) ---
             var contentPropertySymbol = rootTypeSymbol is null
                 ? null
                 : FindContentProperty(rootTypeSymbol, compilation);
 
-            string contentPropertyName = contentPropertySymbol?.Name ?? "Children"; // Fallback на Children
+            string contentPropertyName = contentPropertySymbol?.Name ?? "Children"; 
             
-            // Если свойство не ContentControl.Content, а коллекция (Panel.Children, ItemsControl.Items),
-            // то мы должны использовать .Add()
-            bool isContentCollection = contentPropertySymbol is not null && 
-                IsCollectionType(contentPropertySymbol.Type, compilation);
-            
-            // Если свойство ContentControl.Content, то мы присваиваем. Если Children, то добавляем.
-            bool useAddMethod = isContentCollection || contentPropertyName.Equals("Children", StringComparison.Ordinal);
+            // КЛЮЧЕВОЕ: useAddMethod = (нет сеттера) И (это коллекция)
+            bool useAddMethodForTarget = false;
+            if (contentPropertySymbol is not null)
+            {
+                 bool propertyHasNoSetter = contentPropertySymbol.SetMethod is null;
+                 bool isCollection = IsCollectionType(contentPropertySymbol.Type, compilation);
+                 useAddMethodForTarget = propertyHasNoSetter && isCollection;
+            }
+            else
+            {
+                // Fallback, если ContentAttribute не найден
+                useAddMethodForTarget = contentPropertyName.Equals("Children", StringComparison.Ordinal);
+            }
 
 
-            // Контролы
+            // 5. Контролы (Добавление дочерних элементов)
             foreach (var control in model.Controls)
             {
                 sb.AppendLine($"            this.{control.Name} = new global::{control.Type}();");
@@ -185,7 +227,6 @@ namespace AvaloniaDesigner.Generator
                             }
                             else
                             {
-                                // Генерация диагностического сообщения
                                 context.ReportDiagnostic(Diagnostic.Create(
                                     new DiagnosticDescriptor(
                                         id: "ADG0002",
@@ -215,20 +256,46 @@ namespace AvaloniaDesigner.Generator
                     }
                 }
 
-                // --- Динамическое добавление дочернего контрола ---
-                if (useAddMethod)
+                // Добавление дочернего контрола в целевой контейнер (root или this)
+                if (useAddMethodForTarget)
                 {
-                    sb.AppendLine($"            root.{contentPropertyName}.Add(this.{control.Name});");
+                    // Для Panel, Grid, Canvas (Children/Items)
+                    sb.AppendLine($"            {targetVarName}.{contentPropertyName}.Add(this.{control.Name});");
                 }
                 else
                 {
-                    // Для ContentControl (Content) - присваиваем. 
-                    // Если контролов несколько, будет присвоен только последний.
-                    sb.AppendLine($"            root.{contentPropertyName} = this.{control.Name};");
+                    // Для ContentControl (Content)
+                    sb.AppendLine($"            {targetVarName}.{contentPropertyName} = this.{control.Name};");
                 }
             }
 
-            sb.AppendLine("            this.Content = root;");
+            // 6. Установка корневого контейнера в форму (только если не Режим B)
+            if (!reuseThisAsRoot)
+            {
+                // --- НОВАЯ ЛОГИКА: Определение способа добавления 'root' в 'this' ---
+                
+                bool parentContentIsCollectionWithoutSetter = false;
+                if (parentContentProperty is not null)
+                {
+                    bool parentPropertyHasNoSetter = parentContentProperty.SetMethod is null;
+                    bool parentIsCollection = IsCollectionType(parentContentProperty.Type, compilation);
+                    parentContentIsCollectionWithoutSetter = parentPropertyHasNoSetter && parentIsCollection;
+                }
+                
+                // Имя свойства уже определено в Шаге 1: parentContentPropertyName
+
+                if (parentContentIsCollectionWithoutSetter)
+                {
+                    // Сработает для ListBox.Items, TabControl.Items, т.к. нет сеттера.
+                    sb.AppendLine($"            this.{parentContentPropertyName}.Add({rootVarName});");
+                }
+                else
+                {
+                    // Сработает для UserControl.Content, Window.Content.
+                    sb.AppendLine($"            this.{parentContentPropertyName} = {rootVarName};");
+                }
+            }
+
             sb.AppendLine("        }");
             sb.AppendLine("    }");
             sb.AppendLine("}");
@@ -237,7 +304,7 @@ namespace AvaloniaDesigner.Generator
         }
 
         // ---------------- Roslyn helpers ----------------
-
+        
         private static INamedTypeSymbol? ResolveType(Compilation compilation, string metadataName)
             => compilation.GetTypeByMetadataName(metadataName);
 
@@ -298,25 +365,45 @@ namespace AvaloniaDesigner.Generator
         }
 
         /// <summary>
-        /// Проверяет, является ли данный тип коллекцией, реализующей ICollection<T>.
+        /// Проверяет, является ли данный тип коллекцией (усиленная проверка для Avalonia).
         /// </summary>
         private static bool IsCollectionType(ITypeSymbol type, Compilation compilation)
         {
-            // Упрощенная проверка, ищем ICollection<T>
+            // 1. Проверка на ICollection<T> (основной)
             var iCollectionType = compilation.GetTypeByMetadataName("System.Collections.Generic.ICollection`1");
+            if (iCollectionType is not null && ImplementsInterface(type, iCollectionType))
+                return true;
 
-            if (iCollectionType is null) return false;
+            // 2. Проверка на IReadOnlyList<T> (для ListBox.Items, которые часто ReadOnly)
+            var iReadOnlyListType = compilation.GetTypeByMetadataName("System.Collections.Generic.IReadOnlyList`1");
+            if (iReadOnlyListType is not null && ImplementsInterface(type, iReadOnlyListType))
+                return true;
 
-            // Проверяем, реализует ли тип ICollection<T> (для любого T)
+            // 3. Проверка на универсальный IEnumerable (самый широкий, но безопасный, если нет сеттера)
+            var iEnumerableType = compilation.GetTypeByMetadataName("System.Collections.IEnumerable");
+            if (iEnumerableType is not null && ImplementsInterface(type, iEnumerableType))
+                return true;
+
+            // 4. Проверка на наличие метода 'Add' (прагматичный Fallback)
+            if (type.GetMembers("Add").OfType<IMethodSymbol>().Any(m => m.Parameters.Length == 1))
+                return true;
+            
+            return false;
+        }
+        
+        // Новый вспомогательный метод для унификации проверки интерфейсов
+        private static bool ImplementsInterface(ITypeSymbol type, INamedTypeSymbol interfaceSymbol)
+        {
             if (type is INamedTypeSymbol namedType)
             {
-                if (namedType.IsGenericType && SymbolEqualityComparer.Default.Equals(namedType.ConstructedFrom, iCollectionType))
+                // Проверяем сам тип, если это обобщенный интерфейс
+                if (SymbolEqualityComparer.Default.Equals(namedType.ConstructedFrom, interfaceSymbol))
                     return true;
-
+                
+                // Проверяем все реализованные интерфейсы
                 return namedType.AllInterfaces.Any(iface => 
-                    iface.IsGenericType && SymbolEqualityComparer.Default.Equals(iface.ConstructedFrom, iCollectionType));
+                    iface.IsGenericType && SymbolEqualityComparer.Default.Equals(iface.ConstructedFrom, interfaceSymbol));
             }
-
             return false;
         }
 
@@ -333,7 +420,7 @@ namespace AvaloniaDesigner.Generator
                 return FormatValueLegacy(element, propertyNameForLegacy);
             }
 
-            // string, bool, числа (оставлены для краткости, не изменены)
+            // string, bool, числа 
             if (targetType.SpecialType == SpecialType.System_String)
             {
                 if (element.ValueKind == JsonValueKind.String)
@@ -381,7 +468,6 @@ namespace AvaloniaDesigner.Generator
             {
                 string text = element.GetString() ?? string.Empty;
 
-                // 1) Parse(string) на самом типе (Thickness, CornerRadius)
                 var parseOnType = FindParseOnType(targetType);
                 if (parseOnType is not null)
                 {
@@ -390,7 +476,6 @@ namespace AvaloniaDesigner.Generator
                     return $"{typeName}.Parse(\"{EscapeString(text)}\")";
                 }
 
-                // 2) Parse(string) на совместимом типе (IBrush <- Brush.Parse)
                 var parseForAssignable = FindParseForAssignableType(
                     compilation, targetType, out var parserType);
                 
@@ -430,7 +515,6 @@ namespace AvaloniaDesigner.Generator
         {
             parserType = null;
 
-            // IBrush / Brush
             var brushInterface = compilation.GetTypeByMetadataName("Avalonia.Media.IBrush");
             if (brushInterface is not null && IsAssignableFrom(brushInterface, targetType))
             {
@@ -451,7 +535,6 @@ namespace AvaloniaDesigner.Generator
                 }
             }
             
-            // RowDefinitions / ColumnDefinitions
             var rowDefsType = compilation.GetTypeByMetadataName("Avalonia.Controls.RowDefinitionCollection");
             if (rowDefsType is not null && IsAssignableFrom(rowDefsType, targetType))
             {
@@ -477,8 +560,6 @@ namespace AvaloniaDesigner.Generator
                     }
                 }
             }
-
-
             return null;
         }
 

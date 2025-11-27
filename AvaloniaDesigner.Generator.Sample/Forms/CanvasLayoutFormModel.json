@@ -1,6 +1,7 @@
 ﻿{
   "FormName": "CanvasLayoutForm",
   "NamespaceSuffix": "Forms",
+  "ParentClassType": "Avalonia.Controls.Panel",
 
   "RootContainer": {
     "Type": "Avalonia.Controls.Canvas",
@@ -17,9 +18,9 @@
       "Name": "HeaderLabel",
       "Properties": {
         "Text": "Top Left Corner",
-        "Avalonia.Controls.Canvas.Left": 10, 
-        "Avalonia.Controls.Canvas.Top": 10, 
-        "Avalonia.Controls.ToolTip.Tip": "Hello ToolTip", 
+        "Avalonia.Controls.Canvas.Left": 10,
+        "Avalonia.Controls.Canvas.Top": 10,
+        "Avalonia.Controls.ToolTip.Tip": "Hello ToolTip",
         "FontSize": 16,
         "Foreground": "Black"
       }
@@ -30,7 +31,7 @@
       "Properties": {
         "Content": "Click Me",
         "Avalonia.Controls.Canvas.Left": 350,
-        "Avalonia.Controls.Canvas.Top": 250, 
+        "Avalonia.Controls.Canvas.Top": 250,
         "Width": 120,
         "Height": 40
       }

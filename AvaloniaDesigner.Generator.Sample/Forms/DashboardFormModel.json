@@ -1,7 +1,7 @@
 ﻿{
   "FormName": "DashboardForm",
   "NamespaceSuffix": "Forms",
-
+  "ParentClassType": "Avalonia.Controls.UserControl",
   "RootContainer": {
     "Type": "Avalonia.Controls.Grid",
     "Properties": {

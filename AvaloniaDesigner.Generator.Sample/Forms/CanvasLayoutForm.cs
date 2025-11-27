@@ -2,7 +2,7 @@
 
 namespace AvaloniaDesigner.Generator.Sample.Forms;
 
-public partial class CanvasLayoutForm : UserControl
+public partial class CanvasLayoutForm : Panel
 {
     public CanvasLayoutForm()
     {
