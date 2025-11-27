@@ -1,7 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Text.Json;
 
-
 namespace AvaloniaDesigner.Generator.Models
 {
     /// <summary>
@@ -23,11 +22,8 @@ namespace AvaloniaDesigner.Generator.Models
     {
         public string Type { get; set; } = ""; // Полное имя типа (e.g., Avalonia.Controls.Grid)
         
-        // Свойства контейнера. Используем JsonElement для отложенной обработки типов.
+        // Все свойства, включая RowDefinitions и ColumnDefinitions, теперь здесь
         public Dictionary<string, JsonElement> Properties { get; set; } = new Dictionary<string, JsonElement>();
-        
-        // Специфическое свойство для Grid
-        public List<string>? RowDefinitions { get; set; } 
     }
 
     /// <summary>
@@ -36,7 +32,7 @@ namespace AvaloniaDesigner.Generator.Models
     public class ControlModel
     {
         public string Type { get; set; } = ""; // Полное имя типа (e.g., Avalonia.Controls.Button)
-        public string Name { get; set; } = ""; // Имя контрола, используемое для создания поля (e.g., _buttonSubmit)
+        public string Name { get; set; } = ""; // Имя контрола
         
         // Свойства контрола. Используем JsonElement для отложенной обработки типов.
         public Dictionary<string, JsonElement> Properties { get; set; } = new Dictionary<string, JsonElement>();

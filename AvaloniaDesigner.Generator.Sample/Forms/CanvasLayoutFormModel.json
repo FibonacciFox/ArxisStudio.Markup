@@ -1,0 +1,38 @@
+﻿{
+  "FormName": "CanvasLayoutForm",
+  "NamespaceSuffix": "Forms",
+
+  "RootContainer": {
+    "Type": "Avalonia.Controls.Canvas",
+    "Properties": {
+      "Width": 500,
+      "Height": 300,
+      "Background": "LightGray"
+    }
+  },
+
+  "Controls": [
+    {
+      "Type": "Avalonia.Controls.TextBlock",
+      "Name": "HeaderLabel",
+      "Properties": {
+        "Text": "Top Left Corner",
+        "Avalonia.Controls.Canvas.Left": 10, 
+        "Avalonia.Controls.Canvas.Top": 10, 
+        "FontSize": 16,
+        "Foreground": "Black"
+      }
+    },
+    {
+      "Type": "Avalonia.Controls.Button",
+      "Name": "SubmitButton",
+      "Properties": {
+        "Content": "Click Me",
+        "Avalonia.Controls.Canvas.Left": 350,
+        "Avalonia.Controls.Canvas.Top": 250, 
+        "Width": 120,
+        "Height": 40
+      }
+    }
+  ]
+}
