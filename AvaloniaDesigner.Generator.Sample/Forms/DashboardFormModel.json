@@ -5,11 +5,10 @@
   "RootContainer": {
     "Type": "Avalonia.Controls.Grid",
 
-    "Width": 800,
-    
-    "RowDefinitions": ["Auto", "15", "*"],
-    
+    "RowDefinitions": [ "Auto", "15", "*" ],
+
     "Properties": {
+      "Width": 800,
       "ColumnDefinitions": "Auto, *, 100",
       "Background": "White"
     }
@@ -21,9 +20,9 @@
       "Name": "HeaderLabel1",
       "Properties": {
         "Text": "Welcome to the Generated Form",
-        "Grid.Row": 0,
-        "Grid.Column": 0,
-        "Grid.ColumnSpan": 3,
+        "Avalonia.Controls.Grid.Row": 0,
+        "Avalonia.Controls.Grid.Column": 0,
+        "Avalonia.Controls.Grid.ColumnSpan": 3,
         "HorizontalAlignment": "Center",
         "FontSize": 24,
         "Foreground": "Blue"
@@ -36,9 +35,10 @@
         "Content": "Run Action",
         "VerticalAlignment": "Center",
         "HorizontalAlignment": "Center",
-        "Grid.Row": 2,
-        "Grid.Column": 1,
-        "Width": 150
+        "Avalonia.Controls.Grid.Row": 2,
+        "Avalonia.Controls.Grid.Column": 1,
+        "Width": 150,
+        "Foreground": "Blue"
       }
     }
   ]

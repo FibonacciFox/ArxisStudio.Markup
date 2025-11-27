@@ -1,6 +1,4 @@
-﻿using System;
-using Avalonia;
-using Avalonia.Controls;
+﻿using Avalonia.Controls;
 using Avalonia.Interactivity;
 
 namespace AvaloniaDesigner.Generator.Sample.Forms 
@@ -18,6 +16,7 @@ namespace AvaloniaDesigner.Generator.Sample.Forms
         private void ActionButton_Click(object? sender, RoutedEventArgs e)
         {
             HeaderLabel1.Text = "Test";
+            
         }
     }
 }
