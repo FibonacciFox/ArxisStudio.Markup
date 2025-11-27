@@ -1,0 +1,45 @@
+﻿{
+  "FormName": "DashboardForm",
+  "NamespaceSuffix": "Forms",
+
+  "RootContainer": {
+    "Type": "Avalonia.Controls.Grid",
+
+    "Width": 800,
+    
+    "RowDefinitions": ["Auto", "15", "*"],
+    
+    "Properties": {
+      "ColumnDefinitions": "Auto, *, 100",
+      "Background": "White"
+    }
+  },
+
+  "Controls": [
+    {
+      "Type": "Avalonia.Controls.TextBlock",
+      "Name": "HeaderLabel1",
+      "Properties": {
+        "Text": "Welcome to the Generated Form",
+        "Grid.Row": 0,
+        "Grid.Column": 0,
+        "Grid.ColumnSpan": 3,
+        "HorizontalAlignment": "Center",
+        "FontSize": 24,
+        "Foreground": "Blue"
+      }
+    },
+    {
+      "Type": "Avalonia.Controls.Button",
+      "Name": "ActionButton",
+      "Properties": {
+        "Content": "Run Action",
+        "VerticalAlignment": "Center",
+        "HorizontalAlignment": "Center",
+        "Grid.Row": 2,
+        "Grid.Column": 1,
+        "Width": 150
+      }
+    }
+  ]
+}
