@@ -4,13 +4,15 @@ using System.Text.Json;
 
 namespace AvaloniaDesigner.Generator.Models
 {
-    public class FormModel
+    public class AvaloniaModel
     {
-        public string FormName { get; set; } = "GeneratedForm";
-        public string NamespaceSuffix { get; set; } = "Forms";
-        
+        public string FormName { get; set; } = "GeneratedView";
+        public string NamespaceSuffix { get; set; } = "Views";
         public string ParentClassType { get; set; } = ""; 
         
+        // Новое свойство для свойств самой формы (this.Width, this.Title и т.д.)
+        public Dictionary<string, JsonElement> Properties { get; set; } = new(); 
+
         public RootContainerModel RootContainer { get; set; } = new();
         public List<ControlModel> Controls { get; set; } = new();
     }

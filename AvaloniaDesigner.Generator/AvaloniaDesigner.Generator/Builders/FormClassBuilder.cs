@@ -9,7 +9,7 @@ namespace AvaloniaDesigner.Generator.Builders
     {
         private readonly TypeResolver _resolver;
         private readonly ValueFormatter _formatter;
-        private readonly SourceProductionContext _context; // Для репортинга ошибок
+        private readonly SourceProductionContext _context;
 
         public FormClassBuilder(TypeResolver resolver, SourceProductionContext context)
         {
@@ -18,7 +18,7 @@ namespace AvaloniaDesigner.Generator.Builders
             _formatter = new ValueFormatter(resolver);
         }
 
-        public string Build(FormModel model, string rootNamespace)
+        public string Build(AvaloniaModel model, string rootNamespace) // Обновлен тип модели
         {
             var sb = new StringBuilder();
             string ns = $"{rootNamespace}.{model.NamespaceSuffix}";
@@ -27,6 +27,8 @@ namespace AvaloniaDesigner.Generator.Builders
             sb.AppendLine("using Avalonia.Controls;");
             sb.AppendLine("using Avalonia.Layout;");
             sb.AppendLine("using Avalonia.Media;");
+            sb.AppendLine("using Avalonia.Data;");
+            sb.AppendLine("using System.Collections.Generic;");
             sb.AppendLine();
             sb.AppendLine($"namespace {ns}");
             sb.AppendLine("{");
@@ -53,9 +55,18 @@ namespace AvaloniaDesigner.Generator.Builders
             return sb.ToString();
         }
 
-        private void BuildMethodBody(StringBuilder sb, FormModel model)
+        private void BuildMethodBody(StringBuilder sb, AvaloniaModel model) // Обновлен тип модели
         {
-            // 1. Root Container
+            // --- 0. Применяем свойства к самой форме (this) ---
+            var parentType = _resolver.ResolveType(model.ParentClassType);
+
+            foreach (var prop in model.Properties)
+            {
+                // targetName = "this"
+                ApplyProperty(sb, "this", parentType, prop.Key, prop.Value);
+            }
+
+            // --- 1. Root Container ---
             string rootVar = "root";
             sb.AppendLine($"            global::{model.RootContainer.Type} {rootVar} = new global::{model.RootContainer.Type}();");
             
@@ -67,8 +78,7 @@ namespace AvaloniaDesigner.Generator.Builders
                 ApplyProperty(sb, rootVar, rootType, prop.Key, prop.Value);
             }
 
-            // 2. Child Controls
-            // Определяем, как добавлять детей в Root (Add vs Content =)
+            // --- 2. Child Controls and Assignment ---
             var (rootContentPropName, rootUseAdd) = GetContentStrategy(rootType);
 
             foreach (var control in model.Controls)
@@ -90,8 +100,7 @@ namespace AvaloniaDesigner.Generator.Builders
                     sb.AppendLine($"            {rootVar}.{rootContentPropName} = this.{control.Name};");
             }
 
-            // 3. Assign Root to Parent (this)
-            var parentType = _resolver.ResolveType(model.ParentClassType);
+            // --- 3. Assign Root to Parent (this) ---
             var (parentContentProp, parentUseAdd) = GetContentStrategy(parentType);
 
             if (parentUseAdd)
@@ -102,14 +111,14 @@ namespace AvaloniaDesigner.Generator.Builders
 
         private void ApplyProperty(StringBuilder sb, string targetName, INamedTypeSymbol? typeSymbol, string key, System.Text.Json.JsonElement value)
         {
-            // Attached Property
+            // Attached Property (e.g., Grid.Row)
             if (key.Contains("."))
             {
                 HandleAttachedProperty(sb, targetName, key, value);
                 return;
             }
 
-            // Regular Property
+            // Regular Property (e.g., Width)
             var propSymbol = typeSymbol != null ? _resolver.FindProperty(typeSymbol, key) : null;
             string valueExpr = _formatter.Format(value, propSymbol?.Type);
             sb.AppendLine($"            {targetName}.{key} = {valueExpr};");
@@ -132,7 +141,6 @@ namespace AvaloniaDesigner.Generator.Builders
             }
             else
             {
-                // Диагностика (Warning)
                 _context.ReportDiagnostic(Diagnostic.Create(
                     new DiagnosticDescriptor("ADG0002", "Attached Property Error", 
                     $"Setter not found for {key}", "Generation", DiagnosticSeverity.Warning, true), Location.None));
@@ -144,7 +152,7 @@ namespace AvaloniaDesigner.Generator.Builders
             if (typeSymbol == null) return ("Content", false);
 
             var contentProp = _resolver.FindContentProperty(typeSymbol);
-            string name = contentProp?.Name ?? "Content"; // Default fallback if no attribute
+            string name = contentProp?.Name ?? "Content"; 
 
             if (contentProp != null)
             {
@@ -153,7 +161,6 @@ namespace AvaloniaDesigner.Generator.Builders
                 return (name, noSetter && isCollection);
             }
             
-            // Hardcoded fallback logic check based on name if attribute missing
             if (name == "Children" || name == "Items") return (name, true);
             
             return (name, false);

@@ -4,8 +4,7 @@
   "ParentClassType": "Avalonia.Controls.Window",
   "Properties": {
     "Width": 800,
-    "Height": 450,
-    "Name": "StackPanel1"
+    "Height": 450
   },
   "RootContainer": {
     "Type": "Avalonia.Controls.StackPanel",

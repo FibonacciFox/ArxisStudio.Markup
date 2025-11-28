@@ -2,7 +2,11 @@
   "FormName": "CanvasLayoutForm",
   "NamespaceSuffix": "Forms",
   "ParentClassType": "Avalonia.Controls.UserControl",
-
+  "Properties": {
+    "Width": 800,
+    "Height": 600,
+    "Background": "Green"
+  },
   "RootContainer": {
     "Type": "Avalonia.Controls.Canvas",
     "Properties": {

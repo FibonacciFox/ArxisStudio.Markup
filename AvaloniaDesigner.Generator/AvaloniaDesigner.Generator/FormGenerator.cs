@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Immutable;
 using System.IO;
 using System.Text;
 using System.Text.Json;
@@ -26,39 +27,38 @@ namespace AvaloniaDesigner.Generator
         private void Execute(
             SourceProductionContext context,
             Compilation compilation,
-            System.Collections.Immutable.ImmutableArray<AdditionalText> files)
+            ImmutableArray<AdditionalText> files)
         {
             string rootNamespace = compilation.AssemblyName ?? "DefaultApp";
             
-            // Инициализируем сервисы один раз на компиляцию (TypeResolver кэширует Compilation внутри)
             var typeResolver = new TypeResolver(compilation);
-            
-            // Создаем строителя
             var builder = new FormClassBuilder(typeResolver, context);
 
             foreach (var file in files)
             {
-                var json = file.GetText(context.CancellationToken)?.ToString();
-                if (string.IsNullOrEmpty(json)) continue;
+                var jsonContent = file.GetText(context.CancellationToken)?.ToString();
+                if (string.IsNullOrEmpty(jsonContent)) continue;
 
                 try
                 {
-                    var model = JsonSerializer.Deserialize<FormModel>(json!, 
+                    // Десериализуем в AvaloniaModel
+                    var avaloniaModel = JsonSerializer.Deserialize<AvaloniaModel>(
+                        jsonContent!, 
                         new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
-                    if (model is null) continue;
+                    if (avaloniaModel is null) continue;
 
-                    // Делегируем построение кода классу-строителю
-                    string code = builder.Build(model, rootNamespace);
+                    // Передаем модель в билдер
+                    string code = builder.Build(avaloniaModel, rootNamespace);
 
-                    context.AddSource($"{model.FormName}.g.cs", SourceText.From(code, Encoding.UTF8));
+                    context.AddSource($"{avaloniaModel.FormName}.g.cs", SourceText.From(code, Encoding.UTF8));
                 }
                 catch (JsonException ex)
                 {
-                    // Логика ошибок
                     context.ReportDiagnostic(Diagnostic.Create(
-                        new DiagnosticDescriptor("ADG0001", "JSON Error", 
-                        $"Error parsing {Path.GetFileName(file.Path)}: {ex.Message}", "Gen", DiagnosticSeverity.Error, true), 
+                        new DiagnosticDescriptor("ADG0001", "JSON Parsing Error", 
+                        $"Error parsing {Path.GetFileName(file.Path)}: {ex.Message}", 
+                        "Generation", DiagnosticSeverity.Error, true), 
                         Location.None));
                 }
             }
