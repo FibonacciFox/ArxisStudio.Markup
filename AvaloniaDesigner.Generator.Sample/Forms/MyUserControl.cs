@@ -2,13 +2,11 @@
 
 namespace AvaloniaDesigner.Generator.Sample.Forms;
 
-public partial class CanvasLayoutForm
+public partial class MyUserControl
 {
-    public CanvasLayoutForm()
+    public MyUserControl()
     {
         InitializeComponent();
-
-        Border border = new Border();
-        
+        DockPanel dockPanel = new DockPanel();
     }
 }
