@@ -2,13 +2,13 @@
 using System.Collections.Immutable;
 using System.IO;
 using System.Text;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.Text;
+using AvaloniaDesigner.Generator.Builders;
 using AvaloniaDesigner.Generator.Models;
 using AvaloniaDesigner.Generator.Services;
-using AvaloniaDesigner.Generator.Builders;
-using Newtonsoft.Json; // НОВОЕ ИСПОЛЬЗОВАНИЕ
-using Newtonsoft.Json.Serialization; // Для настройки CamelCase
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.Text;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 
 namespace AvaloniaDesigner.Generator
 {
@@ -30,15 +30,23 @@ namespace AvaloniaDesigner.Generator
             Compilation compilation,
             ImmutableArray<AdditionalText> files)
         {
-            // 🛑 ДОБАВЬТЕ ЭТУ УНИКАЛЬНУЮ ТРАССИРОВКУ В ПЕРВУЮ ЖЕ СТРОКУ
             context.ReportDiagnostic(Diagnostic.Create(
-                new DiagnosticDescriptor("ADG0005", "Generator Version Check", $"Running new generator code version {DateTime.Now.ToString("HHmmss")}.", "Debug", DiagnosticSeverity.Warning, true), 
+                new DiagnosticDescriptor("ADG0005", "Generator Version Check", $"Running new generator code version {DateTime.Now:HHmmss}.", "Debug", DiagnosticSeverity.Warning, true), 
                 Location.None));
             
             string rootNamespace = compilation.AssemblyName ?? "DefaultApp";
             
             var typeResolver = new TypeResolver(compilation);
             var builder = new FormClassBuilder(typeResolver, context);
+
+            var jsonSettings = new JsonSerializerSettings 
+            {
+                ContractResolver = new DefaultContractResolver 
+                { 
+                    NamingStrategy = new CamelCaseNamingStrategy(false, true) 
+                },
+                Converters = { new PropertyModelConverter() }
+            };
 
             foreach (var file in files)
             {
@@ -47,16 +55,9 @@ namespace AvaloniaDesigner.Generator
 
                 try
                 {
-                    //  ИЗМЕНЕНИЕ: ИСПОЛЬЗУЕМ NEWTONSOFT.JSON ДЛЯ ДЕСЕРИАЛИЗАЦИИ
                     var avaloniaModel = JsonConvert.DeserializeObject<AvaloniaModel>(
                         jsonContent!, 
-                        new JsonSerializerSettings { 
-                            // Настройка для корректного сопоставления JSON (camelCase) с C# (PascalCase)
-                            ContractResolver = new DefaultContractResolver 
-                            { 
-                                NamingStrategy = new CamelCaseNamingStrategy(false, true) 
-                            }
-                        });
+                        jsonSettings);
 
                     if (avaloniaModel is null) 
                     {
@@ -72,7 +73,7 @@ namespace AvaloniaDesigner.Generator
 
                     context.AddSource($"{avaloniaModel.FormName}.g.cs", SourceText.From(code, Encoding.UTF8));
                 }
-                catch (Newtonsoft.Json.JsonException ex) //  Обрабатываем исключение Newtonsoft.Json
+                catch (JsonException ex)
                 {
                     context.ReportDiagnostic(Diagnostic.Create(
                         new DiagnosticDescriptor("ADG0001", "JSON Parsing Error", 

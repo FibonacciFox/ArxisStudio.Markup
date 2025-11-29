@@ -6,8 +6,8 @@
     "Content": {
       "Type": "Avalonia.Controls.Border",
       "Properties": {
-        "BorderThickness": { "Value": "3" },
-        "BorderBrush": { "Value": "Blue" },
+        "BorderThickness": "3",
+        "BorderBrush": "Green",
         "Child": {
           "Type": "Avalonia.Controls.ScrollViewer",
           "Properties": {
@@ -17,25 +17,32 @@
                 "Children": [
                   {
                     "Type": "Avalonia.Controls.TextBlock",
-                    "Properties": { "Text": { "Value": "Global Settings" }, "FontSize": { "Value": 20 } }
+                    "Properties": {
+                      "Text": "Global Settings",
+                      "FontSize": 20
+                    }
                   },
                   {
                     "Type": "Avalonia.Controls.Expander",
                     "Properties": {
-                      "Header": { "Value": "Advanced Options" },
-                      "IsExpanded": { "Value": true },
+                      "Header": "Advanced Options",
+                      "IsExpanded": true,
                       "Content": {
                         "Type": "Avalonia.Controls.StackPanel",
                         "Properties": {
-                          "Margin": { "Value": "10"},
+                          "Margin": "10",
                           "Children": [
                             {
                               "Type": "Avalonia.Controls.TextBlock",
-                              "Properties": { "Text": { "Value": "Option A" } }
+                              "Properties": {
+                                "Text": "Option A"
+                              }
                             },
                             {
                               "Type": "Avalonia.Controls.ToggleSwitch",
-                              "Properties": { "IsChecked": { "Value": true } }
+                              "Properties": {
+                                "IsChecked": true
+                              }
                             }
                           ]
                         }

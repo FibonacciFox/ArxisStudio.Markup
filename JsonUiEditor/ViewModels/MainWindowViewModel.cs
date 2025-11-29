@@ -1,9 +1,10 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel; // Если используется CommunityToolkit
+﻿using CommunityToolkit.Mvvm.ComponentModel;
 using Avalonia.Controls;
 using Newtonsoft.Json;
 using JsonUiEditor.Models;
 using JsonUiEditor.Services;
 using System;
+using System.Linq;
 
 namespace JsonUiEditor.ViewModels
 {
@@ -18,8 +19,6 @@ namespace JsonUiEditor.ViewModels
         [ObservableProperty]
         private string _errorMessage = "";
 
-        // Этот метод вызывается автоматически при изменении JsonText (если используете CommunityToolkit)
-        // Либо вызовите его в сеттере свойства JsonText
         partial void OnJsonTextChanged(string value)
         {
             RenderUi();
@@ -31,53 +30,99 @@ namespace JsonUiEditor.ViewModels
 
             try
             {
-                ErrorMessage = ""; // Очищаем ошибки
+                ErrorMessage = ""; 
 
-                // 1. Десериализация JSON
-                // Сначала пробуем как полный объект с Content
-                // Для простоты примера, будем считать, что JSON описывает сразу ControlModel
-                var model = JsonConvert.DeserializeObject<ControlModel>(JsonText);
+                // 1. Десериализация в корневую модель (RootModel)
+                var rootModel = JsonConvert.DeserializeObject<RootModel>(JsonText);
 
-                if (model == null) return;
+                if (rootModel == null || rootModel.Properties == null) return;
+                
+                // 2. Получаем корневой контрол из словаря Properties
+                if (rootModel.Properties.TryGetValue("Content", out object? contentToken))
+                {
+                    // Преобразуем объект в ControlModel (через JObject)
+                    var jObject = contentToken as Newtonsoft.Json.Linq.JObject;
+                    if (jObject == null) throw new InvalidOperationException("Root Content is not a complex object.");
+                    
+                    var contentModel = jObject.ToObject<ControlModel>();
+                    
+                    if (contentModel == null) return;
 
-                // 2. Построение UI
-                RenderedContent = UiBuilder.Build(model);
+                    // 3. Построение UI
+                    RenderedContent = UiBuilder.Build(contentModel);
+                }
             }
             catch (Exception ex)
             {
+                // Для отладки
                 ErrorMessage = $"Error: {ex.Message}";
-                // Опционально: очистить превью или оставить старое
             }
         }
         
-        // Начальный JSON для примера
         public MainWindowViewModel()
         {
+            // Ваш предоставленный JSON-пример
             JsonText = @"{
-  ""Type"": ""StackPanel"",
+  ""FormName"": ""SettingsPanel"",
+  ""NamespaceSuffix"": ""Forms"",
+  ""ParentClassType"": ""Avalonia.Controls.UserControl"",
   ""Properties"": {
-    ""Background"": ""#F0F0F0"",
-    ""Margin"": ""20""
-  },
-  ""Children"": [
-    {
-      ""Type"": ""TextBlock"",
+    ""Content"": {
+      ""Type"": ""Avalonia.Controls.Border"",
       ""Properties"": {
-        ""Text"": ""Hello from JSON!"",
-        ""FontSize"": ""24"",
-        ""Foreground"": ""Blue"",
-        ""HorizontalAlignment"": ""Center""
-      }
-    },
-    {
-      ""Type"": ""Button"",
-      ""Properties"": {
-        ""Content"": ""Click Me"",
-        ""HorizontalAlignment"": ""Center""
+        ""BorderThickness"": ""3"",
+        ""BorderBrush"": ""Green"",
+        ""Child"": {
+          ""Type"": ""Avalonia.Controls.ScrollViewer"",
+          ""Properties"": {
+            ""Content"": {
+              ""Type"": ""Avalonia.Controls.StackPanel"",
+              ""Properties"": {
+                ""Children"": [
+                  {
+                    ""Type"": ""Avalonia.Controls.TextBlock"",
+                    ""Properties"": {
+                      ""Text"": ""Global Settings"",
+                      ""FontSize"": 20
+                    }
+                  },
+                  {
+                    ""Type"": ""Avalonia.Controls.Expander"",
+                    ""Properties"": {
+                      ""Header"": ""Advanced Options"",
+                      ""IsExpanded"": true,
+                      ""Content"": {
+                        ""Type"": ""Avalonia.Controls.StackPanel"",
+                        ""Properties"": {
+                          ""Margin"": ""10"",
+                          ""Children"": [
+                            {
+                              ""Type"": ""Avalonia.Controls.TextBlock"",
+                              ""Properties"": {
+                                ""Text"": ""Option A""
+                              }
+                            },
+                            {
+                              ""Type"": ""Avalonia.Controls.ToggleSwitch"",
+                              ""Properties"": {
+                                ""IsChecked"": true
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
       }
     }
-  ]
+  }
 }";
+            RenderUi();
         }
     }
 }

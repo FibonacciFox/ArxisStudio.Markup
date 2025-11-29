@@ -49,9 +49,6 @@
       <Compile Update="Forms\ViewBoxControl.cs">
         <DependentUpon>ViewBoxModel.json</DependentUpon>
       </Compile>
-      <Compile Update="Forms\CalculatorLayout.cs">
-        <DependentUpon>CalculatorLayoutModel.json</DependentUpon>
-      </Compile>
       <Compile Update="Forms\DrawingSurface.cs">
         <DependentUpon>DrawingSurfaceModel.json</DependentUpon>
       </Compile>

@@ -2,35 +2,34 @@
   "FormName": "DockPanelControl",
   "NamespaceSuffix": "Forms",
   "ParentClassType": "Avalonia.Controls.UserControl",
-
   "Properties": {
-    "Width": { "Value": 800 },
-    "Height": { "Value": 600 },
+    "Width": 800,
+    "Height": 600,
 
     "Content": {
       "Type": "Avalonia.Controls.DockPanel",
       "Properties": {
-        "Name": { "Value": "RootDock" },
-        "LastChildFill": { "Value": true },
+        "Name": "RootDock",
+        "LastChildFill": true,
 
         "Children": [
           {
             "Type": "Avalonia.Controls.Border",
             "Properties": {
-              "Name": { "Value": "TopBorder" },
-              "Background": { "Value": "#FFDDDDDD" },
-              "Height": { "Value": 40 },
-              "Avalonia.Controls.DockPanel.Dock": { "Value": "Top" },
+              "Name": "TopBorder",
+              "Background": "#FFDDDDDD",
+              "Height": 40,
+              "Avalonia.Controls.DockPanel.Dock": "Top",
 
               "Child": {
                 "Type": "Avalonia.Controls.TextBlock",
                 "Properties": {
-                  "Name": { "Value": "HeaderText" },
-                  "Text": { "Value": "Header Area" },
-                  "HorizontalAlignment": { "Value": "Center" },
-                  "VerticalAlignment": { "Value": "Center" },
-                  "Foreground": { "Value": "#FF333333" },
-                  "FontSize": { "Value": 18 }
+                  "Name": "HeaderText",
+                  "Text": "Header Area",
+                  "HorizontalAlignment": "Center",
+                  "VerticalAlignment": "Center",
+                  "Foreground": "#FF333333",
+                  "FontSize": 18
                 }
               }
             }
@@ -39,33 +38,32 @@
           {
             "Type": "Avalonia.Controls.Border",
             "Properties": {
-              "Name": { "Value": "LeftBorder" },
-              "Background": { "Value": "#FFEFEFEF" },
-              "Width": { "Value": 180 },
-              "Avalonia.Controls.DockPanel.Dock": { "Value": "Left" },
+              "Name": "LeftBorder",
+              "Background": "#FFEFEFEF",
+              "Width": 180,
+              "Avalonia.Controls.DockPanel.Dock": "Left",
 
               "Child": {
                 "Type": "Avalonia.Controls.StackPanel",
                 "Properties": {
-                  "Name": { "Value": "LeftPanel" },
-                  "Margin": { "Value": "8" },
+                  "Name": "LeftPanel",
+                  "Margin": "8",
 
                   "Children": [
                     {
                       "Type": "Avalonia.Controls.TextBlock",
                       "Properties": {
-                        "Name": { "Value": "MenuTitle" },
-                        "Text": { "Value": "Menu" },
-                        "FontWeight": { "Value": "Bold" },
-                        "Margin": { "Value": "0,0,0,8" }
+                        "Name": "MenuTitle",
+                        "Text": "Menu",
+                        "FontWeight": "Bold",
+                        "Margin": "0,0,0,8"
                       }
                     },
-
                     {
                       "Type": "Avalonia.Controls.ListBox",
                       "Properties": {
-                        "Name": { "Value": "SideMenu" },
-                        "MinHeight": { "Value": 200 }
+                        "Name": "SideMenu",
+                        "MinHeight": 200
                       }
                     }
                   ]
@@ -77,32 +75,32 @@
           {
             "Type": "Avalonia.Controls.Border",
             "Properties": {
-              "Name": { "Value": "RightBorder" },
-              "Background": { "Value": "#FFF5F5F5" },
-              "Width": { "Value": 200 },
-              "Avalonia.Controls.DockPanel.Dock": { "Value": "Right" },
+              "Name": "RightBorder",
+              "Background": "#FFF5F5F5",
+              "Width": 200,
+              "Avalonia.Controls.DockPanel.Dock": "Right",
 
               "Child": {
                 "Type": "Avalonia.Controls.StackPanel",
                 "Properties": {
-                  "Name": { "Value": "RightPanel" },
-                  "Margin": { "Value": "8" },
+                  "Name": "RightPanel",
+                  "Margin": "8",
 
                   "Children": [
                     {
                       "Type": "Avalonia.Controls.Button",
                       "Properties": {
-                        "Name": { "Value": "ActionButton1" },
-                        "Content": { "Value": "Action 1" },
-                        "Margin": { "Value": "0,0,0,4" }
+                        "Name": "ActionButton1",
+                        "Content": "Action 1",
+                        "Margin": "0,0,0,4"
                       }
                     },
                     {
                       "Type": "Avalonia.Controls.Button",
                       "Properties": {
-                        "Name": { "Value": "ActionButton2" },
-                        "Content": { "Value": "Action 2" },
-                        "Margin": { "Value": "0,4,0,0" }
+                        "Name": "ActionButton2",
+                        "Content": "Action 2",
+                        "Margin": "0,4,0,0"
                       }
                     }
                   ]
@@ -114,16 +112,16 @@
           {
             "Type": "Avalonia.Controls.Border",
             "Properties": {
-              "Name": { "Value": "ContentBorder" },
-              "Background": { "Value": "#FFFFFFFF" },
+              "Name": "ContentBorder",
+              "Background": "#FFFFFFFF",
 
               "Child": {
                 "Type": "Avalonia.Controls.TextBlock",
                 "Properties": {
-                  "Name": { "Value": "ContentText" },
-                  "Text": { "Value": "Main content goes here" },
-                  "Margin": { "Value": "16" },
-                  "TextWrapping": { "Value": "Wrap" }
+                  "Name": "ContentText",
+                  "Text": "Main content goes here",
+                  "Margin": "16",
+                  "TextWrapping": "Wrap"
                 }
               }
             }

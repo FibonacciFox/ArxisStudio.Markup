@@ -2,25 +2,33 @@ using System.Collections.Generic;
 
 namespace JsonUiEditor.Models
 {
-    // Аналог того, что мы делали для генератора, но проще
+    /// <summary>
+    /// Представляет любой контрол или сложный объект (Brush, Thickness),
+    /// который задан через Type (поскольку Properties имеет нестандартную структуру).
+    /// </summary>
     public class ControlModel
     {
+        // Обязательное поле для определения типа Avalonia
         public string Type { get; set; } = "";
         
-        // Свойства контрола (Width, Background и т.д.)
-        public Dictionary<string, object> Properties { get; set; } = new();
+        // Свойства этого контрола или сложного объекта. 
+        // Может содержать примитивы (string, int) ИЛИ вложенные ControlModel (JObject).
+        public Dictionary<string, object>? Properties { get; set; }
         
-        // Для контейнеров (Panel, StackPanel) - список детей
+        // Коллекции (например, Children для Panel)
         public List<ControlModel>? Children { get; set; }
-        
-        // Для ContentControl (Border, ScrollViewer) - один ребенок
-        public ControlModel? Content { get; set; }
     }
     
+    /// <summary>
+    /// Представляет корневую структуру JSON-файла.
+    /// </summary>
     public class RootModel
     {
-        // Обертка, если в JSON есть метаданные формы, но нам нужен только контент
-        public ControlModel? Content { get; set; }
-        // Или если JSON сразу описывает контрол, можно использовать ControlModel напрямую
+        public string? FormName { get; set; }
+        public string? NamespaceSuffix { get; set; }
+        public string? ParentClassType { get; set; }
+        
+        // Словарь Properties корневого контрола (в нем будет ключ "Content")
+        public Dictionary<string, object>? Properties { get; set; }
     }
 }

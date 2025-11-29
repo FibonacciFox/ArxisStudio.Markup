@@ -3,34 +3,35 @@
   "NamespaceSuffix": "Forms",
   "ParentClassType": "Avalonia.Controls.UserControl",
   "Properties": {
-    "Width": { "Value": 400 },
-    "Height": { "Value": 250 },
+    "Width": 400,
+    "Height": 250,
+
     "Content": {
       "Type": "Avalonia.Controls.Border",
       "Properties": {
-        "Name": { "Value": "GradientBorder" },
-        "BorderThickness": { "Value": "5" },
-        "CornerRadius": { "Value": "20" },
-        "Padding": { "Value": "20" },
+        "Name": "GradientBorder",
+        "BorderThickness": "5",
+        "CornerRadius": "20",
+        "Padding": "20",
 
         "BorderBrush": {
           "Type": "Avalonia.Media.LinearGradientBrush",
           "Properties": {
-            "StartPoint": { "Value": "0%,0%" },
-            "EndPoint": { "Value": "100%,100%" },
+            "StartPoint": "0%,0%",
+            "EndPoint": "100%,100%",
             "GradientStops": [
               {
                 "Type": "Avalonia.Media.GradientStop",
                 "Properties": {
-                  "Color": { "Value": "#FFFF0000" },
-                  "Offset": { "Value": 0.0 }
+                  "Color": "#FFFF0000",
+                  "Offset": 0.0
                 }
               },
               {
                 "Type": "Avalonia.Media.GradientStop",
                 "Properties": {
-                  "Color": { "Value": "#FF0000FF" },
-                  "Offset": { "Value": 1.0 }
+                  "Color": "#FF0000FF",
+                  "Offset": 1.0
                 }
               }
             ]
@@ -40,18 +41,18 @@
         "Background": {
           "Type": "Avalonia.Media.SolidColorBrush",
           "Properties": {
-            "Color": { "Value": "#10000000" }
+            "Color": "#10000000"
           }
         },
 
         "Child": {
           "Type": "Avalonia.Controls.TextBlock",
           "Properties": {
-            "Text": { "Value": "Gradient Test" },
-            "HorizontalAlignment": { "Value": "Center" },
-            "VerticalAlignment": { "Value": "Center" },
-            "FontSize": { "Value": 24 },
-            "FontWeight": { "Value": "Bold" }
+            "Text": "Gradient Test",
+            "HorizontalAlignment": "Center",
+            "VerticalAlignment": "Center",
+            "FontSize": 24,
+            "FontWeight": "Bold"
           }
         }
       }

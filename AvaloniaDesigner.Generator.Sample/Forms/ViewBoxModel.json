@@ -3,21 +3,21 @@
   "NamespaceSuffix": "Forms",
   "ParentClassType": "Avalonia.Controls.UserControl",
   "Properties": {
-    "Width": { "Value": "400" },
-    "Height": { "Value": 200 },
+    "Width": 400,
+    "Height": 200,
 
     "Content": {
       "Type": "Avalonia.Controls.Viewbox",
       "Properties": {
-        "Name": { "Value": "Scaler" },
+        "Name": "Scaler",
 
         "Child": {
           "Type": "Avalonia.Controls.TextBlock",
           "Properties": {
-            "Name": { "Value": "ScaleText" },
-            "Text": { "Value": "Scale Me!" },
-            "Foreground": { "Value": "Red" },
-            "HorizontalAlignment": { "Value": "Right" }
+            "Name": "ScaleText",
+            "Text": "Scale Me!",
+            "Foreground": "Red",
+            "HorizontalAlignment": "Right"
           }
         }
       }

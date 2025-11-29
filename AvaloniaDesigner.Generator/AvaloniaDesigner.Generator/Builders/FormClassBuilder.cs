@@ -1,10 +1,10 @@
-﻿using System.Text;
+﻿using System.Collections.Generic;
+using System.Linq;
+using System.Text;
 using AvaloniaDesigner.Generator.Models;
 using AvaloniaDesigner.Generator.Services;
-using Microsoft.CodeAnalysis;
-using System.Collections.Generic;
 using AvaloniaDesigner.Generator.Utility;
-using System.Linq;
+using Microsoft.CodeAnalysis;
 
 namespace AvaloniaDesigner.Generator.Builders
 {
@@ -94,7 +94,7 @@ namespace AvaloniaDesigner.Generator.Builders
                     ? _resolver.FindProperty(parentType, propertyName) 
                     : null;
 
-                // 1. Обработка обычного свойства, содержащего контрол (Content, Child и т.п.)
+                // 1. Обычное свойство, содержащее контрол (Content, Child, Background как объект и т.п.)
                 if (!string.IsNullOrEmpty(prop.Type))
                 {
                     string? controlName = FindControlName(prop);
@@ -114,30 +114,14 @@ namespace AvaloniaDesigner.Generator.Builders
                     var childType = _resolver.ResolveType(prop.Type);
                     CollectFieldsFromProperties(prop.Properties, childType, controls);
                 }
-                
-                // 2. Обработка свойства-коллекции (Children, Items, и т.п.)
+                // 2. Свойство-коллекция (Children, Items и т.п.) — в новом формате всегда массив Items
                 else if (targetPropSymbol != null && _resolver.IsCollectionType(targetPropSymbol.Type))
                 {
                     _context.ReportDiagnostic(Diagnostic.Create(
                         new DiagnosticDescriptor("ADG9902", "Collection Found", $"Processing collection: {propertyName} on type {parentType?.Name}", "Debug", DiagnosticSeverity.Warning, true), 
                         Location.None));
 
-                    // НОВОЕ: поддерживаем два формата:
-                    // - новый: prop.Items (Children: [ {...}, {...} ])
-                    // - старый: prop.Properties["0"],"1"... (словарь)
-                    IEnumerable<PropertyModel> elements;
-
-                    if (prop.Items != null && prop.Items.Count > 0)
-                    {
-                        elements = prop.Items;
-                    }
-                    else if (prop.Properties != null && prop.Properties.Any())
-                    {
-                        elements = prop.Properties
-                            .OrderBy(e => e.Key)
-                            .Select(e => e.Value);
-                    }
-                    else
+                    if (prop.Items == null || prop.Items.Count == 0)
                     {
                         _context.ReportDiagnostic(Diagnostic.Create(
                             new DiagnosticDescriptor("ADG9907", "Collection Empty Check", 
@@ -147,7 +131,7 @@ namespace AvaloniaDesigner.Generator.Builders
                         continue;
                     }
                     
-                    foreach (var elementModel in elements)
+                    foreach (var elementModel in prop.Items)
                     {
                         if (!string.IsNullOrEmpty(elementModel.Type))
                         {

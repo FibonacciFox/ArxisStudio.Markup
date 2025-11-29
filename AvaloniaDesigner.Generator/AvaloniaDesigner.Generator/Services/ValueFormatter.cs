@@ -1,4 +1,6 @@
-﻿using System.Linq;
+﻿using System;
+using System.Globalization;
+using System.Linq;
 using Microsoft.CodeAnalysis;
 using Newtonsoft.Json.Linq;
 
@@ -29,42 +31,43 @@ namespace AvaloniaDesigner.Generator.Services
                 return FormatEnum(element, targetType);
             }
 
-            // --- 1. ОБРАБОТКА ПРИМИТИВОВ (полученных напрямую от Newtonsoft.Json) ---
+            // --- 1. ПРИМИТИВЫ ОТ NEWTONSOFT.JSON ---
 
             if (element is string s)
             {
-                // 🔹 ЧИСЛОВЫЕ ТИПЫ: генерируем литерал, а не Parse(...)
+                // Числовые типы — генерируем литерал, а не Parse(...)
                 if (IsNumeric(targetType))
                 {
-                    // JSON по спецификации уже использует '.', так что это валидный C# литерал
-                    // "0.5" → 0.5   /  "10" → 10
+                    // В JSON уже должен быть формат с точкой ("0.3"), просто возвращаем как есть
                     return s;
                 }
 
                 string escapedString = Escape(s);
 
-                // Кисти — через Brush.Parse(...)
                 if (IsBrush(targetType))
                     return $"global::Avalonia.Media.Brush.Parse(\"{escapedString}\")";
 
-                // Общий случай для типов со статическим Parse(string)
                 if (HasStaticParseMethod(targetType))
                     return $"{targetTypeName}.Parse(\"{escapedString}\")";
 
-                // Обычная строка
                 return $"\"{escapedString}\"";
             }
 
             if (targetType.SpecialType == SpecialType.System_Boolean && element is bool b)
                 return b ? "true" : "false";
 
-            // Если это уже число (int, double и т.п.) — просто выводим как есть
             if (IsNumeric(targetType))
             {
-                return element.ToString() ?? "0";
+                // Числа ВСЕГДА форматируем через InvariantCulture,
+                // чтобы получить 0.3, а не 0,3
+                if (element is IFormattable formattable)
+                    return formattable.ToString(null, CultureInfo.InvariantCulture);
+
+                return Convert.ToString(element, CultureInfo.InvariantCulture) ?? "0";
             }
 
-            // --- 2. ОБРАБОТКА JToken (если Newtonsoft.Json не десериализовал в примитив) ---
+            // --- 2. JToken (если Newtonsoft.Json дал JToken, а не примитив) ---
+
             if (element is JToken token)
             {
                 if (targetType.TypeKind == TypeKind.Enum)
@@ -76,9 +79,9 @@ namespace AvaloniaDesigner.Generator.Services
                 {
                     string tokenString = token.ToString();
 
-                    // Для числовых типов строковый токен также трактуем как литерал
                     if (IsNumeric(targetType))
                     {
+                        // Строка с числом — доверяем JSON (с точкой)
                         return tokenString;
                     }
 
@@ -93,7 +96,20 @@ namespace AvaloniaDesigner.Generator.Services
                     return $"\"{escapedString}\"";
                 }
 
-                // Числа/другое — отдадим как есть (будет валидный литерал)
+                if (IsNumeric(targetType))
+                {
+                    // Числовой JToken → форматируем через InvariantCulture
+                    if (token is JValue jv && jv.Value is IFormattable f)
+                        return f.ToString(null, CultureInfo.InvariantCulture);
+
+                    if (token is JValue jv2)
+                        return Convert.ToString(jv2.Value, CultureInfo.InvariantCulture) ?? "0";
+
+                    return Convert.ToString(token, CultureInfo.InvariantCulture) ?? "0";
+                }
+
+
+                // Остальное — как есть
                 return token.ToString();
             }
 
@@ -127,6 +143,11 @@ namespace AvaloniaDesigner.Generator.Services
         {
             if (element is string s) return $"\"{Escape(s)}\"";
             if (element is bool b) return b ? "true" : "false";
+
+            // На всякий случай: если сюда попадут числа — тоже Invariant
+            if (element is IFormattable f)
+                return f.ToString(null, CultureInfo.InvariantCulture);
+
             return element?.ToString() ?? "null";
         }
 

@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using AvaloniaDesigner.Generator.Models;
 using Microsoft.CodeAnalysis;
@@ -32,7 +30,7 @@ namespace AvaloniaDesigner.Generator.Services
                 : null;
             ITypeSymbol? valueTypeSymbol = targetPropSymbol?.Type;
 
-            // --- 1. ОБРАБОТКА СВОЙСТВ-КОЛЛЕКЦИЙ (Children, Items, и т.п.) ---
+            // --- 1. КОЛЛЕКЦИИ (Children, Items и т.п.) ---
             if (targetPropSymbol != null && _resolver.IsCollectionType(targetPropSymbol.Type))
             {
                 string collectionName = $"{targetName}.{propertyName}";
@@ -40,28 +38,11 @@ namespace AvaloniaDesigner.Generator.Services
                     new DiagnosticDescriptor("ADG9910", "Code Gen: Collection Block", $"Target {targetName}.{propertyName} recognized as Collection.", "Debug", DiagnosticSeverity.Warning, true), 
                     Location.None));
                 
-                // НОВОЕ: поддерживаем два формата:
-                // - новый: model.Items (Children: [ {...}, {...} ])
-                // - старый: model.Properties["0"],"1"... (словарь)
-                IEnumerable<PropertyModel> elements;
-
-                if (model.Items != null && model.Items.Count > 0)
-                {
-                    elements = model.Items;
-                }
-                else if (model.Properties != null && model.Properties.Any())
-                {
-                    elements = model.Properties
-                        .OrderBy(e => e.Key)
-                        .Select(e => e.Value);
-                }
-                else
-                {
+                if (model.Items == null || model.Items.Count == 0)
                     return null;
-                }
 
                 int index = 0;
-                foreach (var elementModel in elements)
+                foreach (var elementModel in model.Items)
                 {
                     if (string.IsNullOrEmpty(elementModel.Type))
                     {
@@ -91,7 +72,7 @@ namespace AvaloniaDesigner.Generator.Services
                 return null;
             }
             
-            // --- 2. ОБРАБОТКА ВЛОЖЕННОГО ОБЪЕКТА/КОНТРОЛА (Content, Child, Template) ---
+            // --- 2. ВЛОЖЕННЫЙ ОБЪЕКТ / КОНТРОЛ (Content, Child, Background как объект и т.п.) ---
             if (!string.IsNullOrEmpty(model.Type))
             {
                 _context.ReportDiagnostic(Diagnostic.Create(
@@ -107,7 +88,7 @@ namespace AvaloniaDesigner.Generator.Services
                 return assignedVarName; 
             }
             
-            // --- 3. ОБРАБОТКА ПРИМИТИВНОГО ЗНАЧЕНИЯ (Width, Height, Name, Attached) ---
+            // --- 3. ПРИМИТИВНОЕ ЗНАЧЕНИЕ (Width, Height, Text, Opacity, Attached и т.п.) ---
             if (model.Value != null)
             {
                 string propertyKey = propertyName;

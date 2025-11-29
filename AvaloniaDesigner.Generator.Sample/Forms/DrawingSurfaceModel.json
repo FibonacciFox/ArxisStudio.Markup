@@ -6,28 +6,28 @@
     "Content": {
       "Type": "Avalonia.Controls.Canvas",
       "Properties": {
-        "Background": { "Value": "Black" },
+        "Background": "Black",
         "Children": [
           {
             "Type": "Avalonia.Controls.Shapes.Rectangle",
             "Properties": {
-              "Width": { "Value": 100 },
-              "Height": { "Value": 100 },
-              "Fill": { "Value": "Red" },
-              "Avalonia.Controls.Canvas.Left": { "Value": 50 },
-              "Avalonia.Controls.Canvas.Top": { "Value": 50 }
+              "Width": 100,
+              "Height": 100,
+              "Fill": "Red",
+              "Avalonia.Controls.Canvas.Left": 50,
+              "Avalonia.Controls.Canvas.Top": 50
             }
           },
           {
             "Type": "Avalonia.Controls.Shapes.Ellipse",
             "Properties": {
-              "Width": { "Value": 80 },
-              "Height": { "Value": 80 },
-              "Fill": { "Value": "Blue" },
-              "Stroke": { "Value": "White" },
-              "StrokeThickness": { "Value": 2 },
-              "Avalonia.Controls.Canvas.Left": { "Value": 200 },
-              "Avalonia.Controls.Canvas.Top": { "Value": 100 }
+              "Width": 80,
+              "Height": 80,
+              "Fill": "Blue",
+              "Stroke": "White",
+              "StrokeThickness": 2,
+              "Avalonia.Controls.Canvas.Left": 200,
+              "Avalonia.Controls.Canvas.Top": 100
             }
           }
         ]
