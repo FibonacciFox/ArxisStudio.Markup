@@ -3,7 +3,7 @@
   "NamespaceSuffix": "Forms",
   "ParentClassType": "Avalonia.Controls.UserControl",
   "Properties": {
-    "Width": { "Value": 400 },
+    "Width": { "Value": "400" },
     "Height": { "Value": 200 },
 
     "Content": {

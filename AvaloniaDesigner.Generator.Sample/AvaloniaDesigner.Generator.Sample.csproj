@@ -34,4 +34,29 @@
     <ItemGroup>
       <ProjectReference Include="..\AvaloniaDesigner.Generator\AvaloniaDesigner.Generator\AvaloniaDesigner.Generator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
     </ItemGroup>
+
+
+    <ItemGroup>
+      <Compile Update="Forms\DockPanelControl.cs">
+        <DependentUpon>DockPanelModel.json</DependentUpon>
+      </Compile>
+      <Compile Update="Forms\GradientCardControl.cs">
+        <DependentUpon>GradientCardControlModel.json</DependentUpon>
+      </Compile>
+      <Compile Update="Forms\SolidColorBrush.cs">
+        <DependentUpon>SolidColorBrushModel.json</DependentUpon>
+      </Compile>
+      <Compile Update="Forms\ViewBoxControl.cs">
+        <DependentUpon>ViewBoxModel.json</DependentUpon>
+      </Compile>
+      <Compile Update="Forms\CalculatorLayout.cs">
+        <DependentUpon>CalculatorLayoutModel.json</DependentUpon>
+      </Compile>
+      <Compile Update="Forms\DrawingSurface.cs">
+        <DependentUpon>DrawingSurfaceModel.json</DependentUpon>
+      </Compile>
+      <Compile Update="Forms\SettingsPanel.cs">
+        <DependentUpon>SettingsPanelModel.json</DependentUpon>
+      </Compile>
+    </ItemGroup>
 </Project>

@@ -1,0 +1,37 @@
+{
+  "FormName": "DrawingSurface",
+  "NamespaceSuffix": "Forms",
+  "ParentClassType": "Avalonia.Controls.UserControl",
+  "Properties": {
+    "Content": {
+      "Type": "Avalonia.Controls.Canvas",
+      "Properties": {
+        "Background": { "Value": "Black" },
+        "Children": [
+          {
+            "Type": "Avalonia.Controls.Shapes.Rectangle",
+            "Properties": {
+              "Width": { "Value": 100 },
+              "Height": { "Value": 100 },
+              "Fill": { "Value": "Red" },
+              "Avalonia.Controls.Canvas.Left": { "Value": 50 },
+              "Avalonia.Controls.Canvas.Top": { "Value": 50 }
+            }
+          },
+          {
+            "Type": "Avalonia.Controls.Shapes.Ellipse",
+            "Properties": {
+              "Width": { "Value": 80 },
+              "Height": { "Value": 80 },
+              "Fill": { "Value": "Blue" },
+              "Stroke": { "Value": "White" },
+              "StrokeThickness": { "Value": 2 },
+              "Avalonia.Controls.Canvas.Left": { "Value": 200 },
+              "Avalonia.Controls.Canvas.Top": { "Value": 100 }
+            }
+          }
+        ]
+      }
+    }
+  }
+}

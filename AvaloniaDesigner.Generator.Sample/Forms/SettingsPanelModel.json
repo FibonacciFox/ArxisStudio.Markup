@@ -1,0 +1,53 @@
+{
+  "FormName": "SettingsPanel",
+  "NamespaceSuffix": "Forms",
+  "ParentClassType": "Avalonia.Controls.UserControl",
+  "Properties": {
+    "Content": {
+      "Type": "Avalonia.Controls.Border",
+      "Properties": {
+        "BorderThickness": { "Value": "3" },
+        "BorderBrush": { "Value": "Blue" },
+        "Child": {
+          "Type": "Avalonia.Controls.ScrollViewer",
+          "Properties": {
+            "Content": {
+              "Type": "Avalonia.Controls.StackPanel",
+              "Properties": {
+                "Children": [
+                  {
+                    "Type": "Avalonia.Controls.TextBlock",
+                    "Properties": { "Text": { "Value": "Global Settings" }, "FontSize": { "Value": 20 } }
+                  },
+                  {
+                    "Type": "Avalonia.Controls.Expander",
+                    "Properties": {
+                      "Header": { "Value": "Advanced Options" },
+                      "IsExpanded": { "Value": true },
+                      "Content": {
+                        "Type": "Avalonia.Controls.StackPanel",
+                        "Properties": {
+                          "Margin": { "Value": "10"},
+                          "Children": [
+                            {
+                              "Type": "Avalonia.Controls.TextBlock",
+                              "Properties": { "Text": { "Value": "Option A" } }
+                            },
+                            {
+                              "Type": "Avalonia.Controls.ToggleSwitch",
+                              "Properties": { "IsChecked": { "Value": true } }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

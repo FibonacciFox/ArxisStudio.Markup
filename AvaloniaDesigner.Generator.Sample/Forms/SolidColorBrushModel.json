@@ -13,15 +13,17 @@
         "Background": {
           "Type": "Avalonia.Media.SolidColorBrush",
           "Properties": {
-            "Color": { "Value": "LightGreen" },
-            "Opacity": { "Value": "0.5" }
+            "Color": { "Value": "Blue" },
+            "Opacity": { "Value": "0.3" }
           }
         },
 
         "Child": {
           "Type": "Avalonia.Controls.TextBlock",
           "Properties": {
-            "Text": { "Value": "Hello Brush!" }
+            "Text": { "Value": "Hello Brush!" },
+            "HorizontalAlignment": { "Value": "Center" },
+            "VerticalAlignment": { "Value": "Center" }
           }
         }
       }

@@ -1,0 +1,59 @@
+{
+  "FormName": "CalculatorLayout",
+  "NamespaceSuffix": "Forms",
+  "ParentClassType": "Avalonia.Controls.UserControl",
+  "Properties": {
+    "Width": { "Value": 800 },
+    "Height": { "Value": 600 },
+    "Content": {
+      "Type": "Avalonia.Controls.Grid",
+      "Properties": {
+        "Width": { "Value": 800 },
+        "Height": { "Value": 600 },
+        "Name": { "Value": "MainGrid" },
+        "RowDefinitions": { "Value": "Auto, *, *, *, *" },
+        "ColumnDefinitions": { "Value": "*, *, *, *" },
+        "Margin": { "Value": "5" },
+
+        "Children": [
+          {
+            "Type": "Avalonia.Controls.TextBox",
+            "Properties": {
+              "Name": { "Value": "Display" },
+              "Text": { "Value": "0" },
+              "TextAlignment": { "Value": "Right" },
+              "Avalonia.Controls.Grid.Row": { "Value": 0 },
+              "Avalonia.Controls.Grid.Column": { "Value": 0 },
+              "Avalonia.Controls.Grid.ColumnSpan": { "Value": 4 }
+            }
+          },
+          {
+            "Type": "Avalonia.Controls.Button",
+            "Properties": {
+              "Content": { "Value": "7" },
+              "Avalonia.Controls.Grid.Row": { "Value": 1 },
+              "Avalonia.Controls.Grid.Column": { "Value": 0 }
+            }
+          },
+          {
+            "Type": "Avalonia.Controls.Button",
+            "Properties": {
+              "Content": { "Value": "8" },
+              "Avalonia.Controls.Grid.Row": { "Value": 1 },
+              "Avalonia.Controls.Grid.Column": { "Value": 1 }
+            }
+          },
+          {
+            "Type": "Avalonia.Controls.Button",
+            "Properties": {
+              "Content": { "Value": "=" },
+              "Background": { "Value": "Orange" },
+              "Avalonia.Controls.Grid.Row": { "Value": 4 },
+              "Avalonia.Controls.Grid.Column": { "Value": 3 }
+            }
+          }
+        ]
+      }
+    }
+  }
+}
