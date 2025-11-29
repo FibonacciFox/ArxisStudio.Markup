@@ -40,19 +40,20 @@ namespace JsonUiEditor.Services
             
             try
             {
-                // 1. ПОИСК И УСТАНОВКА ATTACHED СВОЙСТВ (используя статический метод Set*)
+                // 1. ПОИСК И УСТАНОВКА ATTACHED СВОЙСТВ (через статический метод Set*)
+                Type targetType;
                 if (propName.Contains("."))
                 {
                     var setMethod = FindAttachedPropertySetMethod(propName);
                     if (setMethod != null)
                     {
-                         // Тип для конвертации берется из второго параметра метода Set* (SetTop(Control, double value))
-                         Type targetType = setMethod.GetParameters()[1].ParameterType; 
+                         // Тип для конвертации берется из второго параметра метода Set*
+                         targetType = setMethod.GetParameters()[1].ParameterType; 
                          convertedValue = ConvertPrimitive(value, targetType); 
                          
                          if (convertedValue != null)
                          {
-                             // Вызываем Canvas.SetTop(control, convertedValue)
+                             // Вызываем Canvas.SetLeft(control, convertedValue)
                              setMethod.Invoke(null, new object[] { control, convertedValue });
                              return; 
                          }
@@ -69,6 +70,12 @@ namespace JsonUiEditor.Services
                 // 3. ОБРАБОТКА СЛОЖНЫХ ОБЪЕКТОВ И ВЛОЖЕННЫХ КОНТРОЛОВ (JObject)
                 if (value is JObject jObject)
                 {
+                    if (jObject.ContainsKey("Binding"))
+                    {
+                        // Логика Binding будет здесь
+                        return;
+                    }
+
                     var nestedModel = jObject.ToObject<ControlModel>();
                     if (nestedModel == null || string.IsNullOrEmpty(nestedModel.Type)) return;
                     
@@ -82,20 +89,19 @@ namespace JsonUiEditor.Services
                 // 4. ОБРАБОТКА СТАНДАРТНЫХ СВОЙСТВ 
                 
                 var avaloniaProp = AvaloniaPropertyRegistry.Instance.FindRegistered(control, propName);
-                
-                Type avaloniaPropPropertyType;
+
                 if (avaloniaProp != null)
                 {
-                    avaloniaPropPropertyType = avaloniaProp.PropertyType;
+                    targetType = avaloniaProp.PropertyType;
                 }
                 else
                 {
                     var propInfo = control.GetType().GetProperty(propName);
                     if (propInfo == null || !propInfo.CanWrite) return;
-                    avaloniaPropPropertyType = propInfo.PropertyType;
+                    targetType = propInfo.PropertyType;
                 }
                 
-                convertedValue = ConvertPrimitive(value, avaloniaPropPropertyType); 
+                convertedValue = ConvertPrimitive(value, targetType); 
                 
                 if (convertedValue != null)
                 {
@@ -111,10 +117,6 @@ namespace JsonUiEditor.Services
             }
         }
 
-        /// <summary>
-        /// Ищет статический метод Set* для Attached Property (например, Canvas.SetLeft).
-        /// Требуется полное имя владельца.
-        /// </summary>
         private static MethodInfo? FindAttachedPropertySetMethod(string propName)
         {
             int lastDotIndex = propName.LastIndexOf('.');
@@ -122,24 +124,12 @@ namespace JsonUiEditor.Services
 
             string ownerTypeNameFull = propName.Substring(0, lastDotIndex);
             string propertyName = propName.Substring(lastDotIndex + 1);
-            string setMethodName = "Set" + propertyName; // SetLeft
+            string setMethodName = "Set" + propertyName; 
 
-            // 1. Ищем класс-владелец (например, Avalonia.Controls.Canvas)
             Type? ownerType = FindType(ownerTypeNameFull); 
             
             if (ownerType == null) return null;
 
-            // 2. Ищем статический метод Set* с сигнатурой (Control, TValue)
-            var setMethod = ownerType.GetMethod(
-                setMethodName, 
-                BindingFlags.Public | BindingFlags.Static,
-                null, 
-                new Type[] { typeof(AvaloniaObject), typeof(object) }, // Ищем метод с двумя параметрами
-                null
-            );
-
-            // Так как мы не знаем точный тип TValue (double, int, bool), 
-            // ищем по имени и статичности, а затем проверяем параметры.
             var candidateMethods = ownerType.GetMethods(BindingFlags.Public | BindingFlags.Static)
                 .Where(m => m.Name == setMethodName)
                 .Where(m => m.GetParameters().Length == 2)
@@ -148,8 +138,6 @@ namespace JsonUiEditor.Services
 
             return candidateMethods;
         }
-
-        // --- (Остальные методы ApplyCollectionProperty, CreateComplexObject, SetComplexProperty, ConvertPrimitive и FindType остаются без изменений) ---
 
         private static void ApplyCollectionProperty(object parentObject, string propName, JArray jArray)
         {
@@ -265,7 +253,7 @@ namespace JsonUiEditor.Services
 
             Type? typeFound = null;
 
-            // 1. Сначала пытаемся найти тип по его EXACT имени (для полных имен, типа Avalonia.Controls.Canvas)
+            // 1. Поиск по EXACT имени
             foreach (var asm in AppDomain.CurrentDomain.GetAssemblies())
             {
                 typeFound = asm.GetType(typeName);
@@ -276,7 +264,7 @@ namespace JsonUiEditor.Services
                 }
             }
 
-            // 2. Если не найдено, пробуем добавить общие префиксы Avalonia (для коротких имен)
+            // 2. Поиск с общими префиксами
             string[] commonPrefixes = 
             {
                 "Avalonia.Controls.",
