@@ -28,18 +28,16 @@ namespace AvaloniaDesigner.Generator.Services
             IPropertySymbol? targetPropSymbol = targetTypeSymbol != null 
                 ? _resolver.FindProperty(targetTypeSymbol, propertyName) 
                 : null;
+
             ITypeSymbol? valueTypeSymbol = targetPropSymbol?.Type;
 
-            // --- 1. КОЛЛЕКЦИИ (Children, Items и т.п.) ---
-            if (targetPropSymbol != null && _resolver.IsCollectionType(targetPropSymbol.Type))
+            bool isCollectionTarget = targetPropSymbol != null 
+                                      && _resolver.IsCollectionType(targetPropSymbol.Type);
+
+            // --- 1. КОЛЛЕКЦИИ — только если Items реально есть ---
+            if (isCollectionTarget && model.Items is { Count: > 0 })
             {
                 string collectionName = $"{targetName}.{propertyName}";
-                _context.ReportDiagnostic(Diagnostic.Create(
-                    new DiagnosticDescriptor("ADG9910", "Code Gen: Collection Block", $"Target {targetName}.{propertyName} recognized as Collection.", "Debug", DiagnosticSeverity.Warning, true), 
-                    Location.None));
-                
-                if (model.Items == null || model.Items.Count == 0)
-                    return null;
 
                 int index = 0;
                 foreach (var elementModel in model.Items)
@@ -49,115 +47,87 @@ namespace AvaloniaDesigner.Generator.Services
                         index++;
                         continue;
                     }
-                    
+
                     string elementKey = $"{propertyName}_{index}";
-                    
-                    string? elementVarName = GenerateNestedControl(
-                        sb, 
-                        elementModel, 
-                        elementKey, 
-                        targetTypeSymbol: null); 
-                    
-                    if (!string.IsNullOrEmpty(elementVarName))
-                    {
-                        sb.AppendLine($"            {collectionName}.Add({elementVarName});");
-                        _context.ReportDiagnostic(Diagnostic.Create(
-                            new DiagnosticDescriptor("ADG9911", "Code Gen: Collection Add", $"Added {elementVarName} to {collectionName}.", "Debug", DiagnosticSeverity.Warning, true), 
-                            Location.None));
-                    }
+
+                    string? varName = GenerateNestedControl(
+                        sb,
+                        elementModel,
+                        elementKey);
+
+                    if (varName != null)
+                        sb.AppendLine($"            {collectionName}.Add({varName});");
 
                     index++;
                 }
 
                 return null;
             }
-            
-            // --- 2. ВЛОЖЕННЫЙ ОБЪЕКТ / КОНТРОЛ (Content, Child, Background как объект и т.п.) ---
+
+            // --- 2. Вложенный объект / контрол ---
             if (!string.IsNullOrEmpty(model.Type))
             {
-                _context.ReportDiagnostic(Diagnostic.Create(
-                    new DiagnosticDescriptor("ADG9912", "Code Gen: Nested Control Block", $"Generating nested control {propertyName} of type {model.Type} for {targetName}.", "Debug", DiagnosticSeverity.Warning, true), 
-                    Location.None));
-
-                string? assignedVarName = GenerateNestedControl(sb, model, propertyName, targetTypeSymbol);
+                string? assignedVarName = GenerateNestedControl(sb, model, propertyName);
                 
-                if (!string.IsNullOrEmpty(assignedVarName))
-                {
+                if (assignedVarName != null)
                     sb.AppendLine($"            {targetName}.{propertyName} = {assignedVarName};");
-                }
-                return assignedVarName; 
+
+                return assignedVarName;
             }
-            
-            // --- 3. ПРИМИТИВНОЕ ЗНАЧЕНИЕ (Width, Height, Text, Opacity, Attached и т.п.) ---
+
+            // --- 3. Примитив ---
             if (model.Value != null)
             {
-                string propertyKey = propertyName;
-                
-                if (propertyKey.Contains("."))
+                if (propertyName.Contains("."))
                 {
-                    _context.ReportDiagnostic(Diagnostic.Create(
-                        new DiagnosticDescriptor("ADG9913", "Code Gen: Attached Property", $"Handling attached property {propertyKey} for {targetName}.", "Debug", DiagnosticSeverity.Warning, true), 
-                        Location.None));
-
-                    HandleAttachedProperty(sb, targetName, propertyKey, model.Value);
+                    HandleAttachedProperty(sb, targetName, propertyName, model.Value);
                 }
                 else
                 {
-                    _context.ReportDiagnostic(Diagnostic.Create(
-                        new DiagnosticDescriptor("ADG9914", "Code Gen: Primitive Property", $"Setting primitive property {propertyKey} on {targetName}.", "Debug", DiagnosticSeverity.Warning, true), 
-                        Location.None));
-
                     string valueExpr = _formatter.Format(model.Value, valueTypeSymbol);
-                    sb.AppendLine($"            {targetName}.{propertyKey} = {valueExpr};");
+                    sb.AppendLine($"            {targetName}.{propertyName} = {valueExpr};");
                 }
             }
             
             return null;
         }
-
+        
         private string? GenerateNestedControl(
             StringBuilder sb, 
             PropertyModel model, 
-            string propertyName, 
-            INamedTypeSymbol? targetTypeSymbol)
+            string propertyName)
         {
             string fullTypeName = $"global::{model.Type}";
             string? assignedVarName;
-            
+
             string? controlName = FindControlName(model);
 
-            if (!string.IsNullOrEmpty(controlName)) 
+            if (!string.IsNullOrEmpty(controlName))
             {
-                assignedVarName = $"this.{controlName}"; 
+                assignedVarName = $"this.{controlName}";
                 sb.AppendLine($"            {assignedVarName} = new {fullTypeName}();");
-                _context.ReportDiagnostic(Diagnostic.Create(
-                    new DiagnosticDescriptor("ADG9915", "Code Gen: Control Init (Field)", $"Initialized field {assignedVarName}.", "Debug", DiagnosticSeverity.Warning, true), 
-                    Location.None));
             }
             else
             {
                 assignedVarName = $"_gen_{propertyName}_{Guid.NewGuid().ToString().Replace("-", "").Substring(0, 4)}";
                 sb.AppendLine($"            {fullTypeName} {assignedVarName} = new {fullTypeName}();");
-                _context.ReportDiagnostic(Diagnostic.Create(
-                    new DiagnosticDescriptor("ADG9916", "Code Gen: Control Init (Local)", $"Initialized local {assignedVarName}.", "Debug", DiagnosticSeverity.Warning, true), 
-                    Location.None));
             }
 
-            var newObjectType = _resolver.ResolveType(model.Type);
-            
-            if (model.Properties != null) 
+            var objectType = _resolver.ResolveType(model.Type);
+
+            if (objectType != null && model.Properties != null)
             {
-                foreach (var innerPropEntry in model.Properties)
+                foreach (var propEntry in model.Properties)
                 {
                     GeneratePropertyAssignment(
-                        sb, 
-                        targetName: assignedVarName, 
-                        targetTypeSymbol: newObjectType, 
-                        propertyName: innerPropEntry.Key, 
-                        model: innerPropEntry.Value);
+                        sb,
+                        assignedVarName,
+                        objectType,
+                        propEntry.Key,
+                        propEntry.Value);
                 }
             }
-            
+
             return assignedVarName;
         }
         
@@ -173,26 +143,19 @@ namespace AvaloniaDesigner.Generator.Services
             if (ownerType != null && setter != null)
             {
                 var valType = setter.Parameters[1].Type;
-                string valueExpr = _formatter.Format(value, valType); 
+                string valueExpr = _formatter.Format(value, valType);
                 sb.AppendLine($"            global::{ownerName}.{setter.Name}({targetName}, {valueExpr});");
-            }
-            else
-            {
-                _context.ReportDiagnostic(Diagnostic.Create(
-                    new DiagnosticDescriptor("ADG0002", "Attached Property Error", 
-                    $"Setter not found for {key}", "Generation", DiagnosticSeverity.Warning, true), Location.None));
             }
         }
         
         private string? FindControlName(PropertyModel model)
         {
-            if (model.Properties.TryGetValue("Name", out PropertyModel? nameProp) && nameProp.Value != null)
+            if (model.Properties.TryGetValue("Name", out var nameProp)
+                && nameProp.Value is string s)
             {
-                if (nameProp.Value is string name)
-                {
-                    return name;
-                }
+                return s;
             }
+
             return null;
         }
     }

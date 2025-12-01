@@ -13,5 +13,8 @@ public partial class TestUserControl : UserControl
         InitializeComponent();
         
         Ellipse border = new();
+
+        ColumnDefinitions.Parse("");
+        RowDefinitions.Parse("");
     }
 }

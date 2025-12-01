@@ -55,5 +55,11 @@
       <Compile Update="Forms\SettingsPanel.cs">
         <DependentUpon>SettingsPanelModel.json</DependentUpon>
       </Compile>
+      <Compile Update="Forms\GridLoginFormSmall.cs">
+        <DependentUpon>GridLoginFormSmallModel.json</DependentUpon>
+      </Compile>
+      <Compile Update="Forms\AdminDashboard.cs">
+        <DependentUpon>AdminDashboardModel.json</DependentUpon>
+      </Compile>
     </ItemGroup>
 </Project>

@@ -1,0 +1,55 @@
+﻿{
+  "FormName": "GridLoginFormSmall",
+  "NamespaceSuffix": "Forms",
+  "ParentClassType": "Avalonia.Controls.UserControl",
+  "Properties": {
+    "Width": 350,
+    "Height": 150,
+    "Padding": "10",
+
+    "Content": {
+      "Type": "Avalonia.Controls.Grid",
+      "Properties": {
+        "Name": "LoginFormGrid",
+
+        "ColumnDefinitions": "Auto, 10, *",
+        "RowDefinitions": "Auto, 5, Auto, *",
+
+        "VerticalAlignment": "Center",
+
+        "Children": [
+          {
+            "Type": "Avalonia.Controls.TextBlock",
+            "Properties": {
+              "Text": "Логин:",
+              "VerticalAlignment": "Center"
+            }
+          },
+          {
+            "Type": "Avalonia.Controls.TextBox",
+            "Properties": {
+              "Avalonia.Controls.Grid.Column": 2,
+              "Name": "LoginInput"
+            }
+          },
+          {
+            "Type": "Avalonia.Controls.TextBlock",
+            "Properties": {
+              "Avalonia.Controls.Grid.Row": 2,
+              "Text": "Пароль:",
+              "VerticalAlignment": "Center"
+            }
+          },
+          {
+            "Type": "Avalonia.Controls.TextBox",
+            "Properties": {
+              "Avalonia.Controls.Grid.Row": 2,
+              "Avalonia.Controls.Grid.Column": 2,
+              "Name": "PasswordInput"
+            }
+          }
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,319 @@
+﻿{
+  "FormName": "AdminDashboard",
+  "NamespaceSuffix": "Forms",
+  "ParentClassType": "Avalonia.Controls.UserControl",
+  "Properties": {
+    "Content": {
+      "Type": "Avalonia.Controls.Grid",
+      "Properties": {
+        "Name": "MainLayoutGrid",
+        "Background": {
+          "Type": "Avalonia.Media.SolidColorBrush",
+          "Properties": {
+            "Color": "#FF1C1D24"
+          }
+        },
+        "ColumnDefinitions": "250, *",
+        "RowDefinitions": "50, *",
+        "Children": [
+
+          {
+            "Type": "Avalonia.Controls.Grid",
+            "Properties": {
+              "Name": "TopBar",
+              "Background": {
+                "Type": "Avalonia.Media.SolidColorBrush",
+                "Properties": {
+                  "Color": "#FF242630"
+                }
+              },
+              "ColumnDefinitions": "*, Auto",
+              "Avalonia.Controls.Grid.ColumnSpan": 2,
+              "Avalonia.Controls.Grid.Row": 0,
+              "Children": [
+                {
+                  "Type": "Avalonia.Controls.StackPanel",
+                  "Properties": {
+                    "Name": "TopMenu",
+                    "Orientation": "Horizontal",
+                    "Spacing": 30,
+                    "VerticalAlignment": "Center",
+                    "Children": [
+                      {
+                        "Type": "Avalonia.Controls.TextBlock",
+                        "Properties": {
+                          "Text": "Dashboard",
+                          "Foreground": {
+                            "Type": "Avalonia.Media.SolidColorBrush",
+                            "Properties": {
+                              "Color": "#FF8895AD"
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "Type": "Avalonia.Controls.TextBlock",
+                        "Properties": {
+                          "Text": "Analytics"
+                        }
+                      },
+                      {
+                        "Type": "Avalonia.Controls.TextBlock",
+                        "Properties": {
+                          "Text": "Reports"
+                        }
+                      },
+                      {
+                        "Type": "Avalonia.Controls.TextBlock",
+                        "Properties": {
+                          "Text": "Settings",
+                          "Foreground": {
+                            "Type": "Avalonia.Media.SolidColorBrush",
+                            "Properties": {
+                              "Color": "#FF3A8EEB"
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                },
+                {
+                  "Type": "Avalonia.Controls.StackPanel",
+                  "Properties": {
+                    "Name": "ProfileInfo",
+                    "Orientation": "Horizontal",
+                    "Spacing": 10,
+                    "VerticalAlignment": "Center",
+                    "Avalonia.Controls.Grid.Column": 1,
+                    "Children": [
+                      {
+                        "Type": "Avalonia.Controls.TextBlock",
+                        "Properties": {
+                          "Text": "Welcome, Zura",
+                          "Foreground": {
+                            "Type": "Avalonia.Media.SolidColorBrush",
+                            "Properties": {
+                              "Color": "#FFECF0F1"
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          },
+          
+          {
+            "Type": "Avalonia.Controls.StackPanel",
+            "Properties": {
+              "Name": "SideNav",
+              "Background": {
+                "Type": "Avalonia.Media.SolidColorBrush",
+                "Properties": {
+                  "Color": "#FF242630"
+                }
+              },
+              "Spacing": 15,
+              "Avalonia.Controls.Grid.Column": 0,
+              "Avalonia.Controls.Grid.Row": 1,
+              "Children": [
+                {
+                  "Type": "Avalonia.Controls.Border",
+                  "Properties": {
+                    "Background": {
+                      "Type": "Avalonia.Media.SolidColorBrush",
+                      "Properties": {
+                        "Color": "#FF3A8EEB"
+                      }
+                    },
+                    "Width": 3,
+                    "Height": 40,
+                    "HorizontalAlignment": "Left",
+                    "Margin": "0,0,-3,0",
+                    "Child": {
+                      "Type": "Avalonia.Controls.TextBlock",
+                      "Properties": {
+                        "Text": "Admin Panel",
+                        "Foreground": {
+                          "Type": "Avalonia.Media.SolidColorBrush",
+                          "Properties": {
+                            "Color": "#FFFFFFFF"
+                          }
+                        },
+                        "Margin": "20,0,0,0",
+                        "VerticalAlignment": "Center"
+                      }
+                    }
+                  }
+                }
+                
+              ]
+            }
+          },
+          
+          {
+            "Type": "Avalonia.Controls.Grid",
+            "Properties": {
+              "Name": "ContentWrapper",
+              "Margin": "20",
+              "ColumnDefinitions": "*",
+              "RowDefinitions": "Auto, 15, Auto, 15, *", 
+              "Avalonia.Controls.Grid.Column": 1,
+              "Avalonia.Controls.Grid.Row": 1,
+              "Children": [
+
+                {
+                  "Type": "Avalonia.Controls.TextBlock",
+                  "Properties": {
+                    "Text": "Admin Panel",
+                    "Foreground": {
+                      "Type": "Avalonia.Media.SolidColorBrush",
+                      "Properties": {
+                        "Color": "#FFECF0F1"
+                      }
+                    },
+                    "FontSize": 24,
+                    "FontWeight": "Bold",
+                    "Avalonia.Controls.Grid.Row": 0
+                  }
+                },
+
+                {
+                  "Type": "Avalonia.Controls.StackPanel",
+                  "Properties": {
+                    "Name": "FilterSection",
+                    "Orientation": "Vertical",
+                    "Spacing": 15,
+                    "Avalonia.Controls.Grid.Row": 2,
+                    "Children": [
+                      {
+                        "Type": "Avalonia.Controls.StackPanel",
+                        "Properties": {
+                          "Orientation": "Horizontal",
+                          "Spacing": 20,
+                          "Children": [
+                            {
+                              "Type": "Avalonia.Controls.TextBlock",
+                              "Properties": {
+                                "Text": "Dispatch Logs",
+                                "Foreground": {
+                                  "Type": "Avalonia.Media.SolidColorBrush",
+                                  "Properties": {
+                                    "Color": "#FF3A8EEB"
+                                  }
+                                },
+                                "FontWeight": "SemiBold"
+                              }
+                            },
+                            {
+                              "Type": "Avalonia.Controls.TextBlock",
+                              "Properties": {
+                                "Text": "Activity Logs"
+                              }
+                            }
+
+                          ]
+                        }
+                      },
+
+                      {
+                        "Type": "Avalonia.Controls.StackPanel",
+                        "Properties": {
+                          "Orientation": "Horizontal",
+                          "Spacing": 20,
+                          "Children": [
+                            {
+                              "Type": "Avalonia.Controls.TextBlock",
+                              "Properties": {
+                                "Text": "Data From",
+                                "VerticalAlignment": "Center"
+                              }
+                            },
+                            {
+                              "Type": "Avalonia.Controls.TextBox",
+                              "Properties": {
+                                "Text": "12 Sep, 2019",
+                                "Width": 120,
+                                "Background": {
+                                  "Type": "Avalonia.Media.SolidColorBrush",
+                                  "Properties": {
+                                    "Color": "#FF242630"
+                                  }
+                                }
+                              }
+                            },
+                            {
+                              "Type": "Avalonia.Controls.TextBlock",
+                              "Properties": {
+                                "Text": "Source",
+                                "VerticalAlignment": "Center"
+                              }
+                            },
+                            {
+                              "Type": "Avalonia.Controls.TextBox",
+                              "Properties": {
+                                "Text": "Dispatch",
+                                "Width": 100
+                              }
+                            },
+                            {
+                              "Type": "Avalonia.Controls.Button",
+                              "Properties": {
+                                "Content": "Filter",
+                                "Background": {
+                                  "Type": "Avalonia.Media.SolidColorBrush",
+                                  "Properties": {
+                                    "Color": "#FF2ECC71"
+                                  }
+                                },
+                                "Foreground": {
+                                  "Type": "Avalonia.Media.SolidColorBrush",
+                                  "Properties": {
+                                    "Color": "#FFFFFFFF"
+                                  }
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                },
+                {
+                  "Type": "Avalonia.Controls.Border",
+                  "Properties": {
+                    "Name": "DataTableArea",
+                    "Padding": "20",
+                    "Background": {
+                      "Type": "Avalonia.Media.SolidColorBrush",
+                      "Properties": {
+                        "Color": "#FF242630"
+                      }
+                    },
+                    "Child": {
+                      "Type": "Avalonia.Controls.TextBlock",
+                      "Properties": {
+                        "Text": "Область для DataGrid/ListView с табличными данными",
+                        "Foreground": {
+                          "Type": "Avalonia.Media.SolidColorBrush",
+                          "Properties": {
+                            "Color": "#FF8895AD"
+                          }
+                        }
+                      }
+                    },
+                    "Avalonia.Controls.Grid.Row": 4
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    }
+  }
+}

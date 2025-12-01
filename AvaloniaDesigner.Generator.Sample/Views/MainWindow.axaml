@@ -16,6 +16,6 @@
         <vm:MainWindowViewModel/>
     </Design.DataContext>
 
-   <forms:GradientCardControl />
+   <forms:DockPanelControl />
 
 </Window>
