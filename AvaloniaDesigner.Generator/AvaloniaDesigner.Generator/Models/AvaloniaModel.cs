@@ -13,7 +13,7 @@ namespace AvaloniaDesigner.Generator.Models
         public string Type { get; set; } = ""; 
         public object? Value { get; set; }
         
-        // --- Поля для привязок ---
+        // --- Привязки ---
         public string? BindingPath { get; set; }
         public string? BindingMode { get; set; }      
         public string? BindingConverter { get; set; } 
@@ -22,26 +22,29 @@ namespace AvaloniaDesigner.Generator.Models
         public object? BindingFallbackValue { get; set; }
         public object? BindingTargetNullValue { get; set; }
         public object? BindingConverterParameter { get; set; }
-        // -------------------------
-
-        public string? ResourceKey { get; set; }
         
+        // --- Ресурсы и Ассеты ---
+        public string? ResourceKey { get; set; }
+        public string? AssetPath { get; set; }
+        public string? AssetAssembly { get; set; }
+
         public Dictionary<string, PropertyModel> Properties { get; set; } = new();
         public List<PropertyModel>? Items { get; set; }
 
         public bool Equals(PropertyModel? other)
         {
             if (other is null) return false;
-            // Упрощенное сравнение для кэширования Roslyn
             return Type == other.Type && 
                    BindingPath == other.BindingPath && 
                    BindingMode == other.BindingMode &&
                    ResourceKey == other.ResourceKey && 
+                   AssetPath == other.AssetPath &&
+                   AssetAssembly == other.AssetAssembly &&
                    Equals(Value, other.Value);
         }
 
         public override bool Equals(object? obj) => Equals(obj as PropertyModel);
-        public override int GetHashCode() => (Type, Value, BindingPath).GetHashCode();
+        public override int GetHashCode() => (Type, Value, BindingPath, AssetPath).GetHashCode();
     }
 
     public class AvaloniaModel : IEquatable<AvaloniaModel>
@@ -84,13 +87,11 @@ namespace AvaloniaDesigner.Generator.Models
                 // 1. Привязка ($binding)
                 if (obj.TryGetValue("$binding", out var bindingToken))
                 {
-                    // Путь
                     if (bindingToken.Type == JTokenType.String)
                         result.BindingPath = bindingToken.ToString();
                     else if (bindingToken.Type == JTokenType.Object)
                         result.BindingPath = bindingToken["Path"]?.ToString();
 
-                    // Параметры (Mode, Converter и т.д.) берем из ТЕКУЩЕГО объекта
                     if (obj.TryGetValue("Mode", out var mode)) result.BindingMode = mode.ToString();
                     if (obj.TryGetValue("Converter", out var conv)) result.BindingConverter = conv.ToString();
                     if (obj.TryGetValue("StringFormat", out var sf)) result.BindingStringFormat = sf.ToString();
@@ -103,14 +104,29 @@ namespace AvaloniaDesigner.Generator.Models
                     return result;
                 }
 
-                // 2. Ресурс
+                // 2. Ресурс ($resource)
                 if (obj.TryGetValue("$resource", out var resourceToken))
                 {
                     result.ResourceKey = resourceToken.ToString();
                     return result;
                 }
 
-                // 3. Контрол (Type)
+                // 3. Ассет ($asset)
+                if (obj.TryGetValue("$asset", out var assetToken))
+                {
+                    if (assetToken.Type == JTokenType.String)
+                    {
+                        result.AssetPath = assetToken.ToString();
+                    }
+                    else if (assetToken.Type == JTokenType.Object)
+                    {
+                        result.AssetPath = assetToken["Path"]?.ToString();
+                        result.AssetAssembly = assetToken["Assembly"]?.ToString();
+                    }
+                    return result;
+                }
+
+                // 4. Контрол (Type)
                 if (obj.TryGetValue("Type", out var typeToken))
                 {
                     result.Type = typeToken.ToString();
@@ -125,7 +141,6 @@ namespace AvaloniaDesigner.Generator.Models
                     return result;
                 }
 
-                // 4. Просто вложенный объект свойств
                 foreach (var p in obj.Properties())
                 {
                     var child = p.Value.ToObject<PropertyModel>(serializer);
@@ -134,7 +149,6 @@ namespace AvaloniaDesigner.Generator.Models
                 return result;
             }
 
-            // Примитив
             var token = JToken.Load(reader);
             return new PropertyModel { Value = token.ToObject<object?>(serializer) };
         }

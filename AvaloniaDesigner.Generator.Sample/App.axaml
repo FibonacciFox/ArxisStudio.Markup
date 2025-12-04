@@ -3,13 +3,21 @@
              x:Class="AvaloniaDesigner.Generator.Sample.App"
              xmlns:local="using:AvaloniaDesigner.Generator.Sample"
              RequestedThemeVariant="Dark">
-             <!-- "Default" ThemeVariant follows system theme variant. "Dark" or "Light" are other available options. -->
+    <!-- "Default" ThemeVariant follows system theme variant. "Dark" or "Light" are other available options. -->
 
     <Application.DataTemplates>
-        <local:ViewLocator/>
+        <local:ViewLocator />
     </Application.DataTemplates>
-  
+
     <Application.Styles>
         <FluentTheme />
+        <Style Selector="Button.H1">
+            <Setter Property="Foreground" Value="DarkRed" />
+        </Style>
     </Application.Styles>
+    
+    <Application.Resources>
+        <SolidColorBrush x:Key='BackgroundBrush'>DarkSlateGray</SolidColorBrush>
+        <SolidColorBrush x:Key='ForegroundBrush'>SlateGray</SolidColorBrush>
+    </Application.Resources>
 </Application>

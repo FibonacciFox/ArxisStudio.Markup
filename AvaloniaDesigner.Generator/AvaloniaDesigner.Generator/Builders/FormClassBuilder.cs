@@ -21,7 +21,7 @@ namespace AvaloniaDesigner.Generator.Builders
             _context = context;
         }
 
-        public string Build(AvaloniaModel model, string rootNamespace)
+        public string Build(AvaloniaModel model, string rootNamespace, string assemblyName)
         {
             using var stringWriter = new StringWriter();
             using var writer = new IndentedTextWriter(stringWriter, "    ");
@@ -53,7 +53,7 @@ namespace AvaloniaDesigner.Generator.Builders
             writer.WriteLine("{");
             writer.Indent++;
 
-            BuildMethodBody(writer, model);
+            BuildMethodBody(writer, model, assemblyName);
 
             writer.Indent--;
             writer.WriteLine("}");
@@ -67,9 +67,9 @@ namespace AvaloniaDesigner.Generator.Builders
             return stringWriter.ToString();
         }
 
-        private void BuildMethodBody(IndentedTextWriter writer, AvaloniaModel model)
+        private void BuildMethodBody(IndentedTextWriter writer, AvaloniaModel model, string assemblyName)
         {
-            var propertyGenerator = new PropertyGenerator(_resolver, _formatter, _context);
+            var propertyGenerator = new PropertyGenerator(_resolver, _formatter, _context, assemblyName);
             var parentType = _resolver.ResolveType(model.ParentClassType);
 
             foreach (var prop in model.Properties)

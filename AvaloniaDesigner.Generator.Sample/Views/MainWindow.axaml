@@ -18,6 +18,7 @@
     </Design.DataContext>
 
     <!-- <forms:DockPanelControl /> -->
-   <views:UserProfile />
+    
+    <views:UserProfile />
 
 </Window>

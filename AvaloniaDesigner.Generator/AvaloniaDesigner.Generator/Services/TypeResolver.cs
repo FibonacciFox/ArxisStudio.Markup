@@ -55,6 +55,28 @@ namespace AvaloniaDesigner.Generator.Services
             return null;
         }
 
+        // Проверка на наследование (нужно для ассетов, чтобы отличить Bitmap от WindowIcon)
+        public bool IsAssignableTo(ITypeSymbol type, string baseTypeName)
+        {
+            var baseType = _compilation.GetTypeByMetadataName(baseTypeName);
+            if (baseType == null) return false;
+
+            if (SymbolEqualityComparer.Default.Equals(type, baseType)) return true;
+
+            if (type is INamedTypeSymbol namedType)
+            {
+                if (namedType.AllInterfaces.Any(i => SymbolEqualityComparer.Default.Equals(i, baseType))) return true;
+                
+                var t = type.BaseType;
+                while (t != null)
+                {
+                    if (SymbolEqualityComparer.Default.Equals(t, baseType)) return true;
+                    t = t.BaseType;
+                }
+            }
+            return false;
+        }
+
         public bool IsCollectionType(ITypeSymbol type)
         {
             if (type is IArrayTypeSymbol) return true;
@@ -71,7 +93,7 @@ namespace AvaloniaDesigner.Generator.Services
             var iListNonGeneric = _compilation.GetTypeByMetadataName("System.Collections.IList");
             if (iListNonGeneric != null && ImplementsInterface(type, iListNonGeneric)) return true;
 
-            // Duck typing: поиск метода Add
+            // Duck typing: поиск метода Add (важно для Avalonia.Controls.Controls)
             if (type.GetMembers("Add").OfType<IMethodSymbol>().Any(m => 
                 m.DeclaredAccessibility == Accessibility.Public && m.Parameters.Length == 1)) return true;
 

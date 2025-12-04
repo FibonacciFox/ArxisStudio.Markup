@@ -60,7 +60,9 @@ namespace AvaloniaDesigner.Generator
 
             var typeResolver = new TypeResolver(compilation);
             var builder = new FormClassBuilder(typeResolver, context);
+            
             string rootNamespace = compilation.AssemblyName ?? "AvaloniaApp";
+            string assemblyName = compilation.AssemblyName ?? "AvaloniaApp"; // Получаем имя сборки
 
             foreach (var (model, fileName) in models)
             {
@@ -68,7 +70,7 @@ namespace AvaloniaDesigner.Generator
 
                 try
                 {
-                    string code = builder.Build(model, rootNamespace);
+                    string code = builder.Build(model, rootNamespace, assemblyName);
                     context.AddSource($"{model.FormName}.g.cs", SourceText.From(code, Encoding.UTF8));
                 }
                 catch (Exception ex)
