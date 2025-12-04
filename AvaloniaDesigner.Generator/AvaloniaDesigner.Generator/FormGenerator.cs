@@ -2,6 +2,7 @@
 using System.Collections.Immutable;
 using System.IO;
 using System.Text;
+using System.Threading;
 using AvaloniaDesigner.Generator.Builders;
 using AvaloniaDesigner.Generator.Models;
 using AvaloniaDesigner.Generator.Services;
@@ -15,78 +16,65 @@ namespace AvaloniaDesigner.Generator
     [Generator(LanguageNames.CSharp)]
     public class FormGenerator : IIncrementalGenerator
     {
+        private static readonly JsonSerializerSettings _jsonSettings = new JsonSerializerSettings
+        {
+            ContractResolver = new DefaultContractResolver { NamingStrategy = new CamelCaseNamingStrategy(false, true) },
+            Converters = { new PropertyModelConverter() }
+        };
+
         public void Initialize(IncrementalGeneratorInitializationContext context)
         {
-            var jsonFiles = context.AdditionalTextsProvider
-                .Where(f => Path.GetFileName(f.Path).EndsWith("Model.json", StringComparison.OrdinalIgnoreCase));
+            var pipeline = context.AdditionalTextsProvider
+                .Where(f => Path.GetFileName(f.Path).EndsWith("Model.json", StringComparison.OrdinalIgnoreCase))
+                .Select((text, token) => ParseJson(text, token))
+                .Where(x => x.Model != null);
 
-            var compilationAndFiles = context.CompilationProvider.Combine(jsonFiles.Collect());
+            var compilationAndModels = context.CompilationProvider.Combine(pipeline.Collect());
 
-            context.RegisterSourceOutput(compilationAndFiles, (spc, source) => Execute(spc, source.Left, source.Right));
+            context.RegisterSourceOutput(compilationAndModels, (spc, source) => 
+                Execute(spc, source.Left, source.Right));
+        }
+
+        private static (AvaloniaModel? Model, string FileName) ParseJson(AdditionalText text, CancellationToken token)
+        {
+            var jsonContent = text.GetText(token)?.ToString();
+            if (string.IsNullOrWhiteSpace(jsonContent)) return (null, text.Path);
+
+            try
+            {
+                var model = JsonConvert.DeserializeObject<AvaloniaModel>(jsonContent!, _jsonSettings);
+                return (model, Path.GetFileName(text.Path));
+            }
+            catch
+            {
+                return (null, text.Path);
+            }
         }
 
         private void Execute(
             SourceProductionContext context,
             Compilation compilation,
-            ImmutableArray<AdditionalText> files)
+            ImmutableArray<(AvaloniaModel? Model, string FileName)> models)
         {
-            context.ReportDiagnostic(Diagnostic.Create(
-                new DiagnosticDescriptor("ADG0005", "Generator Version Check", $"Running new generator code version {DateTime.Now:HHmmss}.", "Debug", DiagnosticSeverity.Warning, true), 
-                Location.None));
-            
-            string rootNamespace = compilation.AssemblyName ?? "DefaultApp";
-            
+            if (models.IsDefaultOrEmpty) return;
+
             var typeResolver = new TypeResolver(compilation);
             var builder = new FormClassBuilder(typeResolver, context);
+            string rootNamespace = compilation.AssemblyName ?? "AvaloniaApp";
 
-            var jsonSettings = new JsonSerializerSettings 
+            foreach (var (model, fileName) in models)
             {
-                ContractResolver = new DefaultContractResolver 
-                { 
-                    NamingStrategy = new CamelCaseNamingStrategy(false, true) 
-                },
-                Converters = { new PropertyModelConverter() }
-            };
-
-            foreach (var file in files)
-            {
-                var jsonContent = file.GetText(context.CancellationToken)?.ToString();
-                if (string.IsNullOrEmpty(jsonContent)) continue;
+                if (model is null) continue;
 
                 try
                 {
-                    var avaloniaModel = JsonConvert.DeserializeObject<AvaloniaModel>(
-                        jsonContent!, 
-                        jsonSettings);
-
-                    if (avaloniaModel is null) 
-                    {
-                        context.ReportDiagnostic(Diagnostic.Create(
-                            new DiagnosticDescriptor("ADG0003", "Deserialization Error", 
-                            $"Deserialization resulted in null model for {Path.GetFileName(file.Path)}. Content might be empty or invalid.", 
-                            "Generation", DiagnosticSeverity.Error, true), 
-                            Location.None));
-                        continue;
-                    }
-
-                    string code = builder.Build(avaloniaModel, rootNamespace);
-
-                    context.AddSource($"{avaloniaModel.FormName}.g.cs", SourceText.From(code, Encoding.UTF8));
-                }
-                catch (JsonException ex)
-                {
-                    context.ReportDiagnostic(Diagnostic.Create(
-                        new DiagnosticDescriptor("ADG0001", "JSON Parsing Error", 
-                        $"Error parsing {Path.GetFileName(file.Path)}: {ex.Message}", 
-                        "Generation", DiagnosticSeverity.Error, true), 
-                        Location.None));
+                    string code = builder.Build(model, rootNamespace);
+                    context.AddSource($"{model.FormName}.g.cs", SourceText.From(code, Encoding.UTF8));
                 }
                 catch (Exception ex)
                 {
-                     context.ReportDiagnostic(Diagnostic.Create(
-                        new DiagnosticDescriptor("ADG0004", "General Error", 
-                        $"Unhandled exception during processing {Path.GetFileName(file.Path)}: {ex.Message}", 
-                        "Generation", DiagnosticSeverity.Error, true), 
+                    context.ReportDiagnostic(Diagnostic.Create(
+                        new DiagnosticDescriptor("ADG0004", "Generation Error", $"Error generating {fileName}: {ex.Message}", "Gen", DiagnosticSeverity.Error, true),
                         Location.None));
                 }
             }

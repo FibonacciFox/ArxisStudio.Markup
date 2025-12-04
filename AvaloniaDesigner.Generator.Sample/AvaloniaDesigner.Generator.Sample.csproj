@@ -14,6 +14,7 @@
 
     <ItemGroup>
         <AdditionalFiles Include="Forms\**\*.json"/>
+        <AdditionalFiles Include="Views\UserProfileModel.json" />
     </ItemGroup>
 
 
@@ -46,9 +47,6 @@
       <Compile Update="Forms\SolidColorBrush.cs">
         <DependentUpon>SolidColorBrushModel.json</DependentUpon>
       </Compile>
-      <Compile Update="Forms\ViewBoxControl.cs">
-        <DependentUpon>ViewBoxModel.json</DependentUpon>
-      </Compile>
       <Compile Update="Forms\DrawingSurface.cs">
         <DependentUpon>DrawingSurfaceModel.json</DependentUpon>
       </Compile>
@@ -60,6 +58,9 @@
       </Compile>
       <Compile Update="Forms\AdminDashboard.cs">
         <DependentUpon>AdminDashboardModel.json</DependentUpon>
+      </Compile>
+      <Compile Update="Views\UserProfile.cs">
+        <DependentUpon>UserProfileModel.json</DependentUpon>
       </Compile>
     </ItemGroup>
 </Project>

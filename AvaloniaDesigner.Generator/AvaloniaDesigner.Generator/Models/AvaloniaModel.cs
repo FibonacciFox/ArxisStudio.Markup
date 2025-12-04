@@ -5,168 +5,140 @@ using Newtonsoft.Json.Linq;
 
 namespace AvaloniaDesigner.Generator.Models
 {
-    /// <summary>
-    /// Вспомогательный класс для сбора информации о полях, 
-    /// которые будут объявлены в генерируемом классе.
-    /// </summary>
-    public class ControlInfo
-    {
-        public string Type { get; set; } = "";
-        public string? Name { get; set; } = "";
-    }
+    public record ControlInfo(string Type, string Name);
 
-    /// <summary>
-    /// Класс для представления свойства (примитив, вложенный объект или коллекция).
-    /// </summary>
     [JsonConverter(typeof(PropertyModelConverter))]
-    public class PropertyModel
+    public class PropertyModel : IEquatable<PropertyModel>
     {
-        /// <summary>
-        /// Полное имя типа, если это вложенный контрол (например, "Avalonia.Controls.Button").
-        /// Для обычных примитивных свойств (Width, Text и т.п.) остаётся пустым.
-        /// </summary>
         public string Type { get; set; } = ""; 
-        
-        /// <summary>
-        /// Значение свойства (примитив, enum, строка).
-        /// Например: 800, "Hello", true, 0.5.
-        /// </summary>
         public object? Value { get; set; }
         
-        /// <summary>
-        /// Вложенные свойства объекта/контрола.
-        /// Пример: Content.Properties["Text"], Properties["Background"], Properties["Children"] и т.д.
-        /// </summary>
+        // --- Поля для привязок ---
+        public string? BindingPath { get; set; }
+        public string? BindingMode { get; set; }      
+        public string? BindingConverter { get; set; } 
+        public string? BindingStringFormat { get; set; }
+        public string? BindingElementName { get; set; }
+        public object? BindingFallbackValue { get; set; }
+        public object? BindingTargetNullValue { get; set; }
+        public object? BindingConverterParameter { get; set; }
+        // -------------------------
+
+        public string? ResourceKey { get; set; }
+        
+        public Dictionary<string, PropertyModel> Properties { get; set; } = new();
+        public List<PropertyModel>? Items { get; set; }
+
+        public bool Equals(PropertyModel? other)
+        {
+            if (other is null) return false;
+            // Упрощенное сравнение для кэширования Roslyn
+            return Type == other.Type && 
+                   BindingPath == other.BindingPath && 
+                   BindingMode == other.BindingMode &&
+                   ResourceKey == other.ResourceKey && 
+                   Equals(Value, other.Value);
+        }
+
+        public override bool Equals(object? obj) => Equals(obj as PropertyModel);
+        public override int GetHashCode() => (Type, Value, BindingPath).GetHashCode();
+    }
+
+    public class AvaloniaModel : IEquatable<AvaloniaModel>
+    {
+        public string FormName { get; set; } = "";
+        public string NamespaceSuffix { get; set; } = "";
+        public string ParentClassType { get; set; } = ""; 
         public Dictionary<string, PropertyModel> Properties { get; set; } = new();
 
-        /// <summary>
-        /// Элементы коллекции (Children, Items и т.п.).
-        /// Пример: Children: [ {Type: Button}, {Type: Button} ].
-        /// </summary>
-        public List<PropertyModel>? Items { get; set; }
-    }
-    
-    /// <summary>
-    /// Основная модель, представляющая UserControl/Window.
-    /// </summary>
-    public class AvaloniaModel
-    {
-        public string FormName { get; set; } = "GeneratedView";
-        public string NamespaceSuffix { get; set; } = "Views";
-        public string ParentClassType { get; set; } = ""; 
-        
-        /// <summary>
-        /// Содержит свойства корневого элемента (Width, Height, Content и т.п.).
-        /// Значения могут быть как примитивами (800, "Hello"), так и объектами с Type.
-        /// </summary>
-        public Dictionary<string, PropertyModel> Properties { get; set; } = new(); 
+        public bool Equals(AvaloniaModel? other)
+        {
+            if (other is null) return false;
+            return FormName == other.FormName && ParentClassType == other.ParentClassType;
+        }
     }
 
-    /// <summary>
-    /// Конвертер для поддержки короткого JSON-формата:
-    ///
-    /// 1) Примитив:
-    ///    "Width": 800
-    ///    → PropertyModel { Value = 800 }
-    ///
-    /// 2) Коллекция:
-    ///    "Children": [ {...}, {...} ]
-    ///    → PropertyModel { Items = List<PropertyModel> }
-    ///
-    /// 3) Контрол:
-    ///    "Content": {
-    ///        "Type": "Avalonia.Controls.TextBlock",
-    ///        "Properties": {
-    ///            "Text": "Hello"
-    ///        }
-    ///    }
-    ///    → PropertyModel { Type = "...", Properties = { "Text" => ... } }
-    ///
-    /// Свойства контролов ОБЯЗАТЕЛЬНО находятся в "Properties".
-    /// Вариант с "Type" и свойствами рядом ("Text": "Hello") — не поддерживается.
-    /// </summary>
     public class PropertyModelConverter : JsonConverter<PropertyModel>
     {
-        public override PropertyModel? ReadJson(
-            JsonReader reader,
-            Type objectType,
-            PropertyModel? existingValue,
-            bool hasExistingValue,
-            JsonSerializer serializer)
+        public override PropertyModel? ReadJson(JsonReader reader, Type objectType, PropertyModel? existingValue, bool hasExistingValue, JsonSerializer serializer)
         {
-            if (reader.TokenType == JsonToken.Null)
-                return null;
+            if (reader.TokenType == JsonToken.Null) return null;
 
-            // 1. МАССИВ → КОЛЛЕКЦИЯ (Children: [ {...}, {...} ])
             if (reader.TokenType == JsonToken.StartArray)
             {
                 var array = JArray.Load(reader);
-                var result = new PropertyModel
-                {
-                    Items = new List<PropertyModel>()
-                };
-
+                var result = new PropertyModel { Items = new List<PropertyModel>() };
                 foreach (var item in array)
                 {
                     var child = item.ToObject<PropertyModel>(serializer);
-                    if (child != null)
-                        result.Items.Add(child);
+                    if (child != null) result.Items.Add(child);
                 }
-
                 return result;
             }
 
-            // 2. ОБЪЕКТ
             if (reader.TokenType == JsonToken.StartObject)
             {
                 var obj = JObject.Load(reader);
                 var result = new PropertyModel();
 
-                // 2.1. Контрол / сложный тип: ОБЯЗАТЕЛЬНО есть Type
-                if (obj.TryGetValue("Type", out var typeToken))
+                // 1. Привязка ($binding)
+                if (obj.TryGetValue("$binding", out var bindingToken))
                 {
-                    result.Type = typeToken.ToString();
+                    // Путь
+                    if (bindingToken.Type == JTokenType.String)
+                        result.BindingPath = bindingToken.ToString();
+                    else if (bindingToken.Type == JTokenType.Object)
+                        result.BindingPath = bindingToken["Path"]?.ToString();
 
-                    // Свойства КОНТРОЛА берём ТОЛЬКО из блока Properties
-                    if (obj.TryGetValue("Properties", out var propsToken) &&
-                        propsToken.Type == JTokenType.Object)
-                    {
-                        var propsObj = (JObject)propsToken;
-                        foreach (var p in propsObj.Properties())
-                        {
-                            var child = p.Value.ToObject<PropertyModel>(serializer);
-                            if (child != null)
-                                result.Properties[p.Name] = child;
-                        }
-                    }
+                    // Параметры (Mode, Converter и т.д.) берем из ТЕКУЩЕГО объекта
+                    if (obj.TryGetValue("Mode", out var mode)) result.BindingMode = mode.ToString();
+                    if (obj.TryGetValue("Converter", out var conv)) result.BindingConverter = conv.ToString();
+                    if (obj.TryGetValue("StringFormat", out var sf)) result.BindingStringFormat = sf.ToString();
+                    if (obj.TryGetValue("ElementName", out var elName)) result.BindingElementName = elName.ToString();
+                    
+                    if (obj.TryGetValue("FallbackValue", out var fb)) result.BindingFallbackValue = fb.ToObject<object>();
+                    if (obj.TryGetValue("TargetNullValue", out var tn)) result.BindingTargetNullValue = tn.ToObject<object>();
+                    if (obj.TryGetValue("ConverterParameter", out var cp)) result.BindingConverterParameter = cp.ToObject<object>();
 
-                    // Если Properties нет — контрол без свойств
                     return result;
                 }
 
-                // 2.2. Обычный объект без Type
+                // 2. Ресурс
+                if (obj.TryGetValue("$resource", out var resourceToken))
+                {
+                    result.ResourceKey = resourceToken.ToString();
+                    return result;
+                }
+
+                // 3. Контрол (Type)
+                if (obj.TryGetValue("Type", out var typeToken))
+                {
+                    result.Type = typeToken.ToString();
+                    if (obj.TryGetValue("Properties", out var propsToken) && propsToken is JObject propsObj)
+                    {
+                        foreach (var p in propsObj.Properties())
+                        {
+                            var child = p.Value.ToObject<PropertyModel>(serializer);
+                            if (child != null) result.Properties[p.Name] = child;
+                        }
+                    }
+                    return result;
+                }
+
+                // 4. Просто вложенный объект свойств
                 foreach (var p in obj.Properties())
                 {
                     var child = p.Value.ToObject<PropertyModel>(serializer);
-                    if (child != null)
-                        result.Properties[p.Name] = child;
+                    if (child != null) result.Properties[p.Name] = child;
                 }
-
                 return result;
             }
 
-            // 3. ПРИМИТИВ (число, строка, bool и т.п.) → Value
+            // Примитив
             var token = JToken.Load(reader);
-            return new PropertyModel
-            {
-                // конвертим сразу в object?, без JValue
-                Value = token.ToObject<object?>(serializer)
-            };
+            return new PropertyModel { Value = token.ToObject<object?>(serializer) };
         }
 
-        public override void WriteJson(JsonWriter writer, PropertyModel? value, JsonSerializer serializer)
-        {
-            throw new NotImplementedException("Обратная сериализация для генератора не требуется.");
-        }
+        public override void WriteJson(JsonWriter writer, PropertyModel? value, JsonSerializer serializer) => throw new NotImplementedException();
     }
 }

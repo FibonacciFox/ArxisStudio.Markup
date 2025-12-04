@@ -205,10 +205,7 @@ namespace JsonUiEditor.ViewModels
                     
                     if (newlySelectedNode != null)
                     {
-                        // Присваиваем поле напрямую, чтобы избежать рекурсии OnSelectedNodeChanged,
-                        // если новое значение то же самое, что и старое (что не должно произойти
-                        // из-за обновления всего дерева, но лучше перестраховаться).
-                        _selectedNode = newlySelectedNode;
+                        SelectedNode = newlySelectedNode;
                         // Принудительно уведомляем View о том, что SelectedNode изменился,
                         // чтобы TreeView обновил выделение
                         OnPropertyChanged(nameof(SelectedNode));

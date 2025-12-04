@@ -3,9 +3,6 @@ using Microsoft.CodeAnalysis;
 
 namespace AvaloniaDesigner.Generator.Services
 {
-    /// <summary>
-    /// Отвечает за анализ типов через Roslyn API.
-    /// </summary>
     public class TypeResolver
     {
         private readonly Compilation _compilation;
@@ -22,10 +19,27 @@ namespace AvaloniaDesigner.Generator.Services
         {
             for (var t = type; t is not null; t = t.BaseType)
             {
-                foreach (var member in t.GetMembers(propertyName))
-                {
-                    if (member is IPropertySymbol p) return p;
-                }
+                foreach (var member in t.GetMembers(propertyName).OfType<IPropertySymbol>()) return member;
+            }
+            return null;
+        }
+
+        public IEventSymbol? FindEvent(INamedTypeSymbol type, string eventName)
+        {
+            for (var t = type; t is not null; t = t.BaseType)
+            {
+                foreach (var member in t.GetMembers(eventName).OfType<IEventSymbol>()) return member;
+            }
+            return null;
+        }
+
+        public IFieldSymbol? FindAvaloniaPropertyField(INamedTypeSymbol type, string propertyName)
+        {
+            string fieldName = propertyName + "Property";
+            for (var t = type; t is not null; t = t.BaseType)
+            {
+                foreach (var member in t.GetMembers(fieldName).OfType<IFieldSymbol>()) 
+                    if (member.IsStatic) return member;
             }
             return null;
         }
@@ -41,40 +55,23 @@ namespace AvaloniaDesigner.Generator.Services
             return null;
         }
 
-        public IPropertySymbol? FindContentProperty(INamedTypeSymbol type)
-        {
-            var contentAttributeSymbol = _compilation.GetTypeByMetadataName("Avalonia.Metadata.ContentAttribute");
-            if (contentAttributeSymbol is null) return null;
-
-            for (var t = type; t is not null; t = t.BaseType)
-            {
-                foreach (var member in t.GetMembers().OfType<IPropertySymbol>())
-                {
-                    foreach (var attr in member.GetAttributes())
-                    {
-                        if (SymbolEqualityComparer.Default.Equals(attr.AttributeClass, contentAttributeSymbol))
-                            return member;
-                    }
-                }
-            }
-            return null;
-        }
-
         public bool IsCollectionType(ITypeSymbol type)
         {
-            // 1. System.Collections.Generic.ICollection<T> (основной)
+            if (type is IArrayTypeSymbol) return true;
+
             var iCol = _compilation.GetTypeByMetadataName("System.Collections.Generic.ICollection`1");
             if (iCol != null && ImplementsInterface(type, iCol)) return true;
 
-            // 2. System.Collections.Generic.IList<T> (для коллекций с доступом по индексу)
             var iListGeneric = _compilation.GetTypeByMetadataName("System.Collections.Generic.IList`1");
             if (iListGeneric != null && ImplementsInterface(type, iListGeneric)) return true;
             
-            // 3. System.Collections.ICollection (не-generic)
             var iColNonGeneric = _compilation.GetTypeByMetadataName("System.Collections.ICollection");
             if (iColNonGeneric != null && ImplementsInterface(type, iColNonGeneric)) return true;
 
-            // 4. Проверка на наличие публичного метода Add с одним параметром (как fallback)
+            var iListNonGeneric = _compilation.GetTypeByMetadataName("System.Collections.IList");
+            if (iListNonGeneric != null && ImplementsInterface(type, iListNonGeneric)) return true;
+
+            // Duck typing: поиск метода Add
             if (type.GetMembers("Add").OfType<IMethodSymbol>().Any(m => 
                 m.DeclaredAccessibility == Accessibility.Public && m.Parameters.Length == 1)) return true;
 
@@ -86,12 +83,12 @@ namespace AvaloniaDesigner.Generator.Services
             if (type is INamedTypeSymbol namedType)
             {
                 if (SymbolEqualityComparer.Default.Equals(namedType.ConstructedFrom, interfaceSymbol)) return true;
+                
                 return namedType.AllInterfaces.Any(i => 
-                    i.IsGenericType && SymbolEqualityComparer.Default.Equals(i.ConstructedFrom, interfaceSymbol));
+                    SymbolEqualityComparer.Default.Equals(i.ConstructedFrom, interfaceSymbol) ||
+                    (i.IsGenericType && SymbolEqualityComparer.Default.Equals(i.ConstructedFrom, interfaceSymbol)));
             }
             return false;
         }
-
-        public Compilation Compilation => _compilation;
     }
 }

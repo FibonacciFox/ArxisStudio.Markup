@@ -1,12 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
+using System.ComponentModel;
 
-namespace AvaloniaDesigner.Generator.Utility // Или .Services, если вы там храните
+namespace System.Runtime.CompilerServices
 {
-    /// <summary>
-    /// Предоставляет метод DistinctBy для совместимости с .NET Standard 2.0.
-    /// </summary>
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    internal static class IsExternalInit { }
+}
+
+namespace AvaloniaDesigner.Generator.Utility
+{
     public static class LinqExtensions
     {
         public static IEnumerable<TSource> DistinctBy<TSource, TKey>(

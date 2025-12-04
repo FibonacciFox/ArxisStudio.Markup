@@ -247,7 +247,7 @@ namespace JsonUiEditor.Services
             return value; 
         }
 
-        private static Type? FindType(string typeName)
+        private static Type? FindType(string? typeName)
         {
             if (_typeCache.TryGetValue(typeName, out var type)) return type;
 

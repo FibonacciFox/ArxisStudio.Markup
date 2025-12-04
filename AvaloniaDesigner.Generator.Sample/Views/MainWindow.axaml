@@ -3,6 +3,7 @@
         xmlns:vm="using:AvaloniaDesigner.Generator.Sample.ViewModels"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:views="clr-namespace:AvaloniaDesigner.Generator.Sample.Views"
         xmlns:forms="clr-namespace:AvaloniaDesigner.Generator.Sample.Forms"
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
         x:Class="AvaloniaDesigner.Generator.Sample.Views.MainWindow"
@@ -16,6 +17,7 @@
         <vm:MainWindowViewModel/>
     </Design.DataContext>
 
-   <forms:DockPanelControl />
+    <!-- <forms:DockPanelControl /> -->
+   <views:UserProfile />
 
 </Window>
