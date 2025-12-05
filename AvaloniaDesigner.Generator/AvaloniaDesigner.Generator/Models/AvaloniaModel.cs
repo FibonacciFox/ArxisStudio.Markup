@@ -5,6 +5,17 @@ using Newtonsoft.Json.Linq;
 
 namespace AvaloniaDesigner.Generator.Models
 {
+    // Тип ассета для будущих расширений
+    public enum AssetType
+    {
+        UserControl,
+        Window,
+        Styles,
+        ResourceDictionary,
+        CustomControl,
+        Unknown
+    }
+
     public record ControlInfo(string Type, string Name);
 
     [JsonConverter(typeof(PropertyModelConverter))]
@@ -49,15 +60,15 @@ namespace AvaloniaDesigner.Generator.Models
 
     public class AvaloniaModel : IEquatable<AvaloniaModel>
     {
-        public string FormName { get; set; } = "";
-        public string NamespaceSuffix { get; set; } = "";
-        public string ParentClassType { get; set; } = ""; 
+        // Метаданные теперь берутся из C#, здесь только тип
+        public AssetType AssetType { get; set; } = AssetType.UserControl;
+        
         public Dictionary<string, PropertyModel> Properties { get; set; } = new();
 
         public bool Equals(AvaloniaModel? other)
         {
             if (other is null) return false;
-            return FormName == other.FormName && ParentClassType == other.ParentClassType;
+            return AssetType == other.AssetType; 
         }
     }
 
@@ -84,7 +95,7 @@ namespace AvaloniaDesigner.Generator.Models
                 var obj = JObject.Load(reader);
                 var result = new PropertyModel();
 
-                // 1. Привязка ($binding)
+                // 1. Привязка
                 if (obj.TryGetValue("$binding", out var bindingToken))
                 {
                     if (bindingToken.Type == JTokenType.String)
@@ -104,14 +115,14 @@ namespace AvaloniaDesigner.Generator.Models
                     return result;
                 }
 
-                // 2. Ресурс ($resource)
+                // 2. Ресурс
                 if (obj.TryGetValue("$resource", out var resourceToken))
                 {
                     result.ResourceKey = resourceToken.ToString();
                     return result;
                 }
 
-                // 3. Ассет ($asset)
+                // 3. Ассет
                 if (obj.TryGetValue("$asset", out var assetToken))
                 {
                     if (assetToken.Type == JTokenType.String)
@@ -126,7 +137,7 @@ namespace AvaloniaDesigner.Generator.Models
                     return result;
                 }
 
-                // 4. Контрол (Type)
+                // 4. Контрол
                 if (obj.TryGetValue("Type", out var typeToken))
                 {
                     result.Type = typeToken.ToString();

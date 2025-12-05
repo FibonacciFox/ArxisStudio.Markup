@@ -12,14 +12,21 @@ namespace AvaloniaDesigner.Generator.Services
         private readonly TypeResolver _resolver;
         private readonly ValueFormatter _formatter;
         private readonly SourceProductionContext _context;
-        private readonly string _assemblyName; 
+        private readonly string _assemblyName;
+        private readonly string _fileName;
 
-        public PropertyGenerator(TypeResolver resolver, ValueFormatter formatter, SourceProductionContext context, string assemblyName)
+        public PropertyGenerator(
+            TypeResolver resolver, 
+            ValueFormatter formatter, 
+            SourceProductionContext context, 
+            string assemblyName,
+            string fileName)
         {
             _resolver = resolver;
             _formatter = formatter;
             _context = context;
             _assemblyName = assemblyName;
+            _fileName = fileName;
         }
 
         public void GeneratePropertyAssignment(IndentedTextWriter writer,
@@ -28,107 +35,88 @@ namespace AvaloniaDesigner.Generator.Services
             string propertyName,
             PropertyModel model)
         {
+            if (targetTypeSymbol == null) return;
+
             // 1. События
-            if (targetTypeSymbol != null)
+            var eventSymbol = _resolver.FindEvent(targetTypeSymbol, propertyName);
+            if (eventSymbol != null)
             {
-                var eventSymbol = _resolver.FindEvent(targetTypeSymbol, propertyName);
-                if (eventSymbol != null && model.Value is string handlerName)
+                if (model.Value is string handlerName)
                 {
                     writer.WriteLine($"{targetName}.{propertyName} += {handlerName};");
-                    return;
-                }
-            }
-
-            IPropertySymbol? targetPropSymbol = targetTypeSymbol != null
-                ? _resolver.FindProperty(targetTypeSymbol, propertyName)
-                : null;
-
-            // 2. Привязки
-            if (!string.IsNullOrEmpty(model.BindingPath) && targetTypeSymbol != null)
-            {
-                var avaloniaProp = _resolver.FindAvaloniaPropertyField(targetTypeSymbol, propertyName);
-                if (avaloniaProp != null)
-                {
-                    string propField = $"{targetTypeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}.{avaloniaProp.Name}";
-
-                    string bindingCode = $"new global::Avalonia.Data.Binding(\"{model.BindingPath}\")";
-                    var initializers = new List<string>();
-
-                    if (!string.IsNullOrEmpty(model.BindingMode))
-                        initializers.Add($"Mode = global::Avalonia.Data.BindingMode.{model.BindingMode}");
-
-                    if (!string.IsNullOrEmpty(model.BindingStringFormat))
-                        initializers.Add($"StringFormat = \"{model.BindingStringFormat}\"");
-
-                    if (!string.IsNullOrEmpty(model.BindingElementName))
-                        initializers.Add($"ElementName = \"{model.BindingElementName}\"");
-
-                    if (!string.IsNullOrEmpty(model.BindingConverter))
-                        initializers.Add($"Converter = (global::Avalonia.Data.Converters.IValueConverter)this.FindResource(\"{model.BindingConverter}\")");
-
-                    if (model.BindingConverterParameter != null)
-                    {
-                        string paramVal = _formatter.Format(model.BindingConverterParameter, null);
-                        initializers.Add($"ConverterParameter = {paramVal}");
-                    }
-
-                    if (model.BindingFallbackValue != null)
-                    {
-                        string fallbackVal = _formatter.Format(model.BindingFallbackValue, targetPropSymbol?.Type);
-                        initializers.Add($"FallbackValue = {fallbackVal}");
-                    }
-
-                    if (model.BindingTargetNullValue != null)
-                    {
-                        string nullVal = _formatter.Format(model.BindingTargetNullValue, targetPropSymbol?.Type);
-                        initializers.Add($"TargetNullValue = {nullVal}");
-                    }
-
-                    if (initializers.Count > 0)
-                        bindingCode += " { " + string.Join(", ", initializers) + " }";
-
-                    writer.WriteLine($"{targetName}.Bind({propField}, {bindingCode});");
-                }
-                else
-                {
-                    writer.WriteLine($"// ОШИБКА: Не найдено DependencyProperty для {propertyName}");
                 }
                 return;
             }
 
-            // 3. Ресурсы (Исправление: IResourceNode -> IResourceHost)
-            if (!string.IsNullOrEmpty(model.ResourceKey) && targetTypeSymbol != null)
+            // 2. Поиск свойства
+            IPropertySymbol? targetPropSymbol = _resolver.FindProperty(targetTypeSymbol, propertyName);
+            
+            if (targetPropSymbol == null)
+            {
+                if (!propertyName.Contains(".") && propertyName != "Classes" && propertyName != "Name")
+                {
+                    _context.ReportDiagnostic(Diagnostic.Create(
+                        DiagnosticDescriptors.PropertyNotFound, Location.None, propertyName, targetTypeSymbol.Name));
+                    return; 
+                }
+            }
+
+            // 2.1 Привязки
+            if (!string.IsNullOrEmpty(model.BindingPath))
             {
                 var avaloniaProp = _resolver.FindAvaloniaPropertyField(targetTypeSymbol, propertyName);
-                
                 if (avaloniaProp != null)
                 {
-                    // Используем GetResourceObservable + Bind для корректной работы в конструкторе
                     string propField = $"{targetTypeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}.{avaloniaProp.Name}";
+                    string bindingCode = $"new global::Avalonia.Data.Binding(\"{model.BindingPath}\")";
                     
-                    // ВАЖНОЕ ИСПРАВЛЕНИЕ: приведение к IResourceHost вместо IResourceNode
+                    var initializers = new List<string>();
+                    if (!string.IsNullOrEmpty(model.BindingMode)) initializers.Add($"Mode = global::Avalonia.Data.BindingMode.{model.BindingMode}");
+                    if (!string.IsNullOrEmpty(model.BindingStringFormat)) initializers.Add($"StringFormat = \"{model.BindingStringFormat}\"");
+                    if (!string.IsNullOrEmpty(model.BindingElementName)) initializers.Add($"ElementName = \"{model.BindingElementName}\"");
+                    if (!string.IsNullOrEmpty(model.BindingConverter)) initializers.Add($"Converter = (global::Avalonia.Data.Converters.IValueConverter)this.FindResource(\"{model.BindingConverter}\")");
+                    
+                    if (model.BindingConverterParameter != null)
+                        initializers.Add($"ConverterParameter = {_formatter.Format(model.BindingConverterParameter, null)}");
+                    if (model.BindingFallbackValue != null)
+                        initializers.Add($"FallbackValue = {_formatter.Format(model.BindingFallbackValue, targetPropSymbol?.Type)}");
+                    if (model.BindingTargetNullValue != null)
+                        initializers.Add($"TargetNullValue = {_formatter.Format(model.BindingTargetNullValue, targetPropSymbol?.Type)}");
+
+                    if (initializers.Count > 0) bindingCode += " { " + string.Join(", ", initializers) + " }";
+
+                    writer.WriteLine($"{targetName}.Bind({propField}, {bindingCode});");
+                }
+                return;
+            }
+
+            // 2.2 Ресурсы
+            if (!string.IsNullOrEmpty(model.ResourceKey))
+            {
+                var avaloniaProp = _resolver.FindAvaloniaPropertyField(targetTypeSymbol, propertyName);
+                if (avaloniaProp != null)
+                {
+                    string propField = $"{targetTypeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}.{avaloniaProp.Name}";
+                    // Используем this.GetResourceObservable без приведения (работает, т.к. UserControl : IResourceHost)
                     writer.WriteLine($"{targetName}.Bind({propField}, this.GetResourceObservable(\"{model.ResourceKey}\"));");
                 }
                 else if (targetPropSymbol != null)
                 {
-                    // Fallback для обычных свойств (рискованно в конструкторе, но выбора нет)
                     string typeName = targetPropSymbol.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
                     writer.WriteLine($"{targetName}.{propertyName} = ({typeName})this.FindResource(\"{model.ResourceKey}\");");
                 }
                 return;
             }
 
-            // 4. Ассеты
-            if (!string.IsNullOrEmpty(model.AssetPath) && targetTypeSymbol != null)
+            // 2.3 Ассеты
+            if (!string.IsNullOrEmpty(model.AssetPath))
             {
                 if (targetPropSymbol != null)
                 {
                     string targetAssembly = !string.IsNullOrEmpty(model.AssetAssembly) ? model.AssetAssembly! : _assemblyName;
                     string cleanPath = model.AssetPath!.TrimStart('/');
                     string uriString = $"avares://{targetAssembly}/{cleanPath}";
-                    
-                    string uriCode = $"new global::System.Uri(\"{uriString}\")";
-                    string streamCode = $"global::Avalonia.Platform.AssetLoader.Open({uriCode})";
+                    string streamCode = $"global::Avalonia.Platform.AssetLoader.Open(new global::System.Uri(\"{uriString}\"))";
 
                     if (_resolver.IsAssignableTo(targetPropSymbol.Type, "Avalonia.Media.IImage") || 
                         _resolver.IsAssignableTo(targetPropSymbol.Type, "Avalonia.Media.Imaging.Bitmap"))
@@ -147,25 +135,25 @@ namespace AvaloniaDesigner.Generator.Services
                 return;
             }
 
-            // 5. Коллекции
-            bool isCollectionTarget = targetPropSymbol != null && _resolver.IsCollectionType(targetPropSymbol.Type);
-            if (isCollectionTarget && model.Items is { Count: > 0 })
+            // 2.4 Коллекции
+            if (targetPropSymbol != null && _resolver.IsCollectionType(targetPropSymbol.Type))
             {
-                string collectionName = $"{targetName}.{propertyName}";
-                int index = 0;
-                foreach (var elementModel in model.Items)
+                if (model.Items is { Count: > 0 })
                 {
-                    if (string.IsNullOrEmpty(elementModel.Type)) { index++; continue; }
-
-                    string? varName = GenerateNestedControl(writer, elementModel, $"{propertyName}_{index}");
-                    if (varName != null)
-                        writer.WriteLine($"{collectionName}.Add({varName});");
-                    index++;
+                    string collectionName = $"{targetName}.{propertyName}";
+                    int index = 0;
+                    foreach (var elementModel in model.Items)
+                    {
+                        if (string.IsNullOrEmpty(elementModel.Type)) { index++; continue; }
+                        string? varName = GenerateNestedControl(writer, elementModel, $"{propertyName}_{index}");
+                        if (varName != null) writer.WriteLine($"{collectionName}.Add({varName});");
+                        index++;
+                    }
                 }
                 return;
             }
 
-            // 6. Вложенные контролы
+            // 2.5 Вложенные контролы
             if (!string.IsNullOrEmpty(model.Type))
             {
                 string? assignedVarName = GenerateNestedControl(writer, model, propertyName);
@@ -174,39 +162,32 @@ namespace AvaloniaDesigner.Generator.Services
                 return;
             }
 
-            // 7. Обычные значения
+            // 2.6 Обычные значения
             if (model.Value != null)
             {
-                bool handled = false;
-
-                bool isReadOnly = targetPropSymbol != null && targetPropSymbol.SetMethod == null;
-                if (isReadOnly)
+                if (propertyName.Contains("."))
                 {
-                    var parseMethod = targetPropSymbol!.Type.GetMembers("Parse")
-                        .OfType<IMethodSymbol>()
-                        .FirstOrDefault(m => 
-                            m.IsStatic && 
-                            m.DeclaredAccessibility == Accessibility.Public &&
-                            m.Parameters.Length == 1 && 
-                            m.Parameters[0].Type.SpecialType == SpecialType.System_String);
-
-                    if (parseMethod != null && _resolver.IsCollectionType(targetPropSymbol.Type))
-                    {
-                        string typeName = targetPropSymbol.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
-                        string strVal = model.Value.ToString();
-                        
-                        writer.WriteLine($"{targetName}.{propertyName}.AddRange({typeName}.Parse(\"{strVal}\"));");
-                        handled = true;
-                    }
+                    HandleAttachedProperty(writer, targetName, propertyName, model.Value);
                 }
-
-                if (!handled)
+                else
                 {
-                    if (propertyName.Contains("."))
+                    // Обработка Classes (ReadOnly collection + Parse)
+                    bool handled = false;
+                    if (targetPropSymbol != null && targetPropSymbol.SetMethod == null)
                     {
-                        HandleAttachedProperty(writer, targetName, propertyName, model.Value);
+                        var parseMethod = targetPropSymbol.Type.GetMembers("Parse")
+                            .OfType<IMethodSymbol>()
+                            .FirstOrDefault(m => m.IsStatic && m.Parameters.Length == 1 && m.Parameters[0].Type.SpecialType == SpecialType.System_String);
+
+                        if (parseMethod != null && _resolver.IsCollectionType(targetPropSymbol.Type))
+                        {
+                            string typeName = targetPropSymbol.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+                            writer.WriteLine($"{targetName}.{propertyName}.AddRange({typeName}.Parse(\"{model.Value}\"));");
+                            handled = true;
+                        }
                     }
-                    else
+
+                    if (!handled)
                     {
                         string valueExpr = _formatter.Format(model.Value, targetPropSymbol?.Type);
                         writer.WriteLine($"{targetName}.{propertyName} = {valueExpr};");
@@ -217,6 +198,13 @@ namespace AvaloniaDesigner.Generator.Services
 
         private string? GenerateNestedControl(IndentedTextWriter writer, PropertyModel model, string propertyName)
         {
+            var objectType = _resolver.ResolveType(model.Type);
+            if (objectType == null)
+            {
+                _context.ReportDiagnostic(Diagnostic.Create(DiagnosticDescriptors.TypeNotFound, Location.None, model.Type));
+                return null;
+            }
+
             string fullTypeName = $"global::{model.Type}";
             string? controlName = null;
 
@@ -226,19 +214,16 @@ namespace AvaloniaDesigner.Generator.Services
             string assignedVarName;
             if (!string.IsNullOrEmpty(controlName))
             {
-                // Именованный контрол (поле класса), без регистрации NameScope
                 assignedVarName = $"this.{controlName}";
                 writer.WriteLine($"{assignedVarName} = new {fullTypeName}();");
             }
             else
             {
-                // Анонимный контрол
                 assignedVarName = $"_gen_{propertyName}_{Guid.NewGuid().ToString("N").Substring(0, 4)}";
                 writer.WriteLine($"{fullTypeName} {assignedVarName} = new {fullTypeName}();");
             }
 
-            var objectType = _resolver.ResolveType(model.Type);
-            if (objectType != null && model.Properties != null)
+            if (model.Properties != null)
             {
                 foreach (var propEntry in model.Properties)
                 {
@@ -254,7 +239,14 @@ namespace AvaloniaDesigner.Generator.Services
             int lastDot = key.LastIndexOf('.');
             string ownerName = key.Substring(0, lastDot);
             string propName = key.Substring(lastDot + 1);
+            
             var ownerType = _resolver.ResolveType(ownerName);
+            if (ownerType == null)
+            {
+                 _context.ReportDiagnostic(Diagnostic.Create(DiagnosticDescriptors.TypeNotFound, Location.None, ownerName));
+                 return;
+            }
+
             var setter = ownerType != null ? _resolver.FindAttachedSetter(ownerType, propName) : null;
 
             if (ownerType != null && setter != null)
@@ -262,6 +254,10 @@ namespace AvaloniaDesigner.Generator.Services
                 var valType = setter.Parameters[1].Type;
                 string valueExpr = _formatter.Format(value, valType);
                 writer.WriteLine($"global::{ownerName}.{setter.Name}({targetName}, {valueExpr});");
+            }
+            else
+            {
+                 _context.ReportDiagnostic(Diagnostic.Create(DiagnosticDescriptors.PropertyNotFound, Location.None, propName, ownerName));
             }
         }
     }

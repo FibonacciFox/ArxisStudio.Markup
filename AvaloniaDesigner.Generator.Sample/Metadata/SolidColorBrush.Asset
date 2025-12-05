@@ -1,7 +1,5 @@
 ﻿{
-  "FormName": "SolidColorBrush",
-  "NamespaceSuffix": "Forms",
-  "ParentClassType": "Avalonia.Controls.UserControl",
+  "AssetType": "UserControl",
   "Properties": {
     "Width": 400,
     "Height": 250,

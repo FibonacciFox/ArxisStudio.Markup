@@ -1,13 +1,11 @@
 ﻿{
-  "FormName": "UserProfile",
-  "NamespaceSuffix": "Views",
-  "ParentClassType": "Avalonia.Controls.UserControl",
+  "AssetType": "UserControl",
   "Properties": {
     "Content": {
       "Type": "Avalonia.Controls.Grid",
       "Properties": {
         "Name": "RootGrid",
-        "RowDefinitions": "Auto, *, Auto",
+        "RowDefinitions": "Auto, Auto, Auto",
         "Margin": "0",
         "Background": { "$resource": "BackgroundBrush" },
 
@@ -22,7 +20,6 @@
                 "Properties": {
                   "Text": "User Profile",
                   "Foreground": { "$resource": "ForegroundBrush" },
-
                   "FontSize": 20,
                   "FontWeight": "Bold"
                 }
@@ -108,15 +105,18 @@
           {
             "Type": "Avalonia.Controls.StackPanel",
             "Properties": {
+              "Name":"StackPanel1",
               "Avalonia.Controls.Grid.Row": 2,
               "Orientation": "Horizontal",
               "HorizontalAlignment": "Right",
               "Spacing": 10,
               "Margin": "15",
+              "Height": 80,
               "Children": [
                 {
                   "Type": "Avalonia.Controls.Button",
                   "Properties": {
+                    "Name": "CancelButton",
                     "Content": "Cancel"
                   }
                 },

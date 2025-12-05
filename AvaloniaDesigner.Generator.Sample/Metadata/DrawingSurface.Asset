@@ -1,7 +1,5 @@
 {
-  "FormName": "DrawingSurface",
-  "NamespaceSuffix": "Forms",
-  "ParentClassType": "Avalonia.Controls.UserControl",
+  "AssetType": "UserControl",
   "Properties": {
     "Content": {
       "Type": "Avalonia.Controls.Canvas",

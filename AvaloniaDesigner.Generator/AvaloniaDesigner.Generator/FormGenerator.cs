@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Immutable;
 using System.IO;
+using System.Linq;
 using System.Text;
-using System.Threading;
 using AvaloniaDesigner.Generator.Builders;
 using AvaloniaDesigner.Generator.Models;
 using AvaloniaDesigner.Generator.Services;
@@ -24,60 +24,91 @@ namespace AvaloniaDesigner.Generator
 
         public void Initialize(IncrementalGeneratorInitializationContext context)
         {
-            var pipeline = context.AdditionalTextsProvider
-                .Where(f => Path.GetFileName(f.Path).EndsWith("Model.json", StringComparison.OrdinalIgnoreCase))
-                .Select((text, token) => ParseJson(text, token))
-                .Where(x => x.Model != null);
+            var assetsPipeline = context.AdditionalTextsProvider
+                .Where(f => Path.GetFileName(f.Path).EndsWith(".Asset", StringComparison.OrdinalIgnoreCase))
+                .Select((text, token) => 
+                {
+                    var result = ParseJson(text);
+                    return (Asset: result.Model, FilePath: text.Path, FileName: Path.GetFileName(text.Path), Error: result.Error);
+                });
 
-            var compilationAndModels = context.CompilationProvider.Combine(pipeline.Collect());
+            var combined = context.CompilationProvider.Combine(assetsPipeline.Collect());
 
-            context.RegisterSourceOutput(compilationAndModels, (spc, source) => 
+            context.RegisterSourceOutput(combined, (spc, source) => 
                 Execute(spc, source.Left, source.Right));
         }
 
-        private static (AvaloniaModel? Model, string FileName) ParseJson(AdditionalText text, CancellationToken token)
+        private static (AvaloniaModel? Model, Exception? Error) ParseJson(AdditionalText text)
         {
-            var jsonContent = text.GetText(token)?.ToString();
-            if (string.IsNullOrWhiteSpace(jsonContent)) return (null, text.Path);
-
+            var jsonContent = text.GetText()?.ToString();
+            if (string.IsNullOrWhiteSpace(jsonContent)) return (null, null);
             try
             {
                 var model = JsonConvert.DeserializeObject<AvaloniaModel>(jsonContent!, _jsonSettings);
-                return (model, Path.GetFileName(text.Path));
+                return (model, null);
             }
-            catch
-            {
-                return (null, text.Path);
-            }
+            catch (Exception ex) { return (null, ex); }
         }
 
         private void Execute(
             SourceProductionContext context,
             Compilation compilation,
-            ImmutableArray<(AvaloniaModel? Model, string FileName)> models)
+            ImmutableArray<(AvaloniaModel? Asset, string FilePath, string FileName, Exception? Error)> inputs)
         {
-            if (models.IsDefaultOrEmpty) return;
+            if (inputs.IsDefaultOrEmpty) return;
 
             var typeResolver = new TypeResolver(compilation);
             var builder = new FormClassBuilder(typeResolver, context);
             
-            string rootNamespace = compilation.AssemblyName ?? "AvaloniaApp";
-            string assemblyName = compilation.AssemblyName ?? "AvaloniaApp"; // Получаем имя сборки
+            string assemblyName = compilation.AssemblyName ?? "AvaloniaApp";
 
-            foreach (var (model, fileName) in models)
+            foreach (var input in inputs)
             {
-                if (model is null) continue;
+                if (input.Error != null)
+                {
+                    context.ReportDiagnostic(Diagnostic.Create(DiagnosticDescriptors.JsonParseError, Location.None, input.FileName, input.Error.Message));
+                    continue;
+                }
+                if (input.Asset is null) continue;
+
+                // Поиск парного C# файла (Имя.cs или Имя.asset.cs)
+                string baseName = Path.GetFileNameWithoutExtension(input.FileName);
+                string targetCs = $"{baseName}.cs";
+                string targetAssetCs = $"{baseName}.asset.cs";
+
+                var matchingTrees = compilation.SyntaxTrees.Where(t => 
+                {
+                    string fName = Path.GetFileName(t.FilePath);
+                    return fName.Equals(targetCs, StringComparison.OrdinalIgnoreCase) ||
+                           fName.Equals(targetAssetCs, StringComparison.OrdinalIgnoreCase);
+                }).ToList();
+
+                if (matchingTrees.Count == 0)
+                {
+                    context.ReportDiagnostic(Diagnostic.Create(DiagnosticDescriptors.PartialClassNotFound, Location.None, input.FileName, targetCs, targetAssetCs));
+                    continue;
+                }
+
+                if (matchingTrees.Count > 1)
+                {
+                    string foundPaths = string.Join(", ", matchingTrees.Select(t => t.FilePath));
+                    context.ReportDiagnostic(Diagnostic.Create(DiagnosticDescriptors.AmbiguousPartialClass, Location.None, input.FileName, foundPaths));
+                    continue;
+                }
+
+                var classInfo = RoslynParser.ParseClassInfo(matchingTrees[0]);
+                if (classInfo == null) continue;
 
                 try
                 {
-                    string code = builder.Build(model, rootNamespace, assemblyName);
-                    context.AddSource($"{model.FormName}.g.cs", SourceText.From(code, Encoding.UTF8));
+                    string code = builder.Build(input.Asset, classInfo, assemblyName, input.FileName);
+                    string hintName = $"{classInfo.Namespace}.{classInfo.ClassName}.g.cs";
+                    context.AddSource(hintName, SourceText.From(code, Encoding.UTF8));
                 }
                 catch (Exception ex)
                 {
                     context.ReportDiagnostic(Diagnostic.Create(
-                        new DiagnosticDescriptor("ADG0004", "Generation Error", $"Error generating {fileName}: {ex.Message}", "Gen", DiagnosticSeverity.Error, true),
-                        Location.None));
+                        new DiagnosticDescriptor("ADG9999", "Crash", $"{ex.Message}", "Gen", DiagnosticSeverity.Error, true), Location.None));
                 }
             }
         }
