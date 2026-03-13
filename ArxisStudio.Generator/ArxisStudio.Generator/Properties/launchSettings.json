@@ -3,7 +3,7 @@
   "profiles": {
     "DebugRoslynSourceGenerator": {
       "commandName": "DebugRoslynComponent",
-      "targetProject": "../Arxui.Sample/ArxisStudio.Markup.Sample.csproj"
+      "targetProject": "../ArxisStudio.Sample/ArxisStudio.Markup.Sample.csproj"
     }
   }
 }

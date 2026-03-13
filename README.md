@@ -20,19 +20,19 @@
 
 ## Структура репозитория
 
-- `Arxui.Contracts`  
+- `ArxisStudio.Contracts`  
   Контракты и сериализация JSON-модели `.arxui`.
 
-- `Arxui.Generator/Arxui.Generator`  
+- `ArxisStudio.Generator/ArxisStudio.Generator`  
   Инкрементальный Roslyn source generator. Читает `.arxui` из `AdditionalFiles`, разрешает типы и свойства через Roslyn и генерирует C#-код, который строит визуальное дерево Avalonia.
 
-- `Arxui.Sample`  
+- `ArxisStudio.Sample`  
   Пример Avalonia-приложения, использующего генератор. Показывает ожидаемый сценарий: `partial`-класс плюс соответствующее описание в `.arxui`.
 
-- `Arxui.Editor`  
+- `ArxisStudio.Editor`  
   Экспериментальный визуальный редактор и превьюер. Он редактирует JSON-модель как дерево и рендерит результат во время выполнения через reflection. Этот проект показывает, почему такая модель удобна для инструментов даже вне build-time генерации.
 
-- `Arxui.Tests`  
+- `ArxisStudio.Tests`  
   Тесты поведения генератора для текущей схемы `.arxui`.
 
 ## Как это работает
@@ -149,11 +149,11 @@ public partial class SolidColorBrush : ContentControl
 ```bash
 dotnet build ArxisStudio.Markup.sln
 dotnet test ArxisStudio.Markup.sln
-dotnet run --project Arxui.Sample/ArxisStudio.Markup.Sample.csproj
-dotnet run --project Arxui.Editor/ArxisStudio.Markup.Json.Loader.csproj
+dotnet run --project ArxisStudio.Sample/ArxisStudio.Markup.Sample.csproj
+dotnet run --project ArxisStudio.Editor/ArxisStudio.Markup.Json.Loader.csproj
 ```
 
-`Arxui.Sample` показывает сценарий использования генератора в приложении, а `Arxui.Editor` демонстрирует редактирование модели и runtime-превью.
+`ArxisStudio.Sample` показывает сценарий использования генератора в приложении, а `ArxisStudio.Editor` демонстрирует редактирование модели и runtime-превью.
 
 ## Текущий статус
 

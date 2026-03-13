@@ -1,0 +1,125 @@
+using System.Linq;
+using ArxisStudio.Markup.Json;
+using Xunit;
+
+namespace ArxisStudio.Markup.Json.Generator.Tests
+{
+    public class ArxuiSerializerTests
+    {
+        private const string JsonModel = @"
+{
+  ""SchemaVersion"": 1,
+  ""Kind"": ""UserControl"",
+  ""Root"": {
+    ""TypeName"": ""Avalonia.Controls.UserControl"",
+    ""Properties"": {
+      ""Width"": 320,
+      ""Background"": {
+        ""$resource"": ""BackgroundBrush""
+      },
+      ""Content"": {
+        ""TypeName"": ""Avalonia.Controls.Image"",
+        ""Properties"": {
+          ""Source"": {
+            ""$asset"": {
+              ""Path"": ""/Assets/avatar.png"",
+              ""Assembly"": ""Sample.Assembly""
+            }
+          }
+        }
+      },
+      ""Tag"": {
+        ""$binding"": ""UserName"",
+        ""Mode"": ""TwoWay"",
+        ""StringFormat"": ""Hello {0}"",
+        ""RelativeSource"": {
+          ""Mode"": ""Self""
+        }
+      }
+    }
+  }
+}
+";
+
+        [Fact]
+        public void Deserialize_should_read_special_value_kinds()
+        {
+            var document = ArxuiSerializer.Deserialize(JsonModel);
+
+            Assert.NotNull(document);
+            Assert.Equal(1, document!.SchemaVersion);
+            Assert.Equal(UiDocumentKind.UserControl, document.Kind);
+            Assert.Equal("Avalonia.Controls.UserControl", document.Root.TypeName);
+
+            var background = Assert.IsType<ResourceValue>(document.Root.Properties["Background"]);
+            Assert.Equal("BackgroundBrush", background.Key);
+
+            var content = Assert.IsType<NodeValue>(document.Root.Properties["Content"]);
+            var source = Assert.IsType<UriReferenceValue>(content.Node.Properties["Source"]);
+            Assert.Equal("/Assets/avatar.png", source.Path);
+            Assert.Equal("Sample.Assembly", source.Assembly);
+
+            var tag = Assert.IsType<BindingValue>(document.Root.Properties["Tag"]);
+            Assert.Equal("UserName", tag.Binding.Path);
+            Assert.Equal(BindingMode.TwoWay, tag.Binding.Mode);
+            Assert.Equal("Hello {0}", tag.Binding.StringFormat);
+            Assert.NotNull(tag.Binding.RelativeSource);
+            Assert.Equal(RelativeSourceMode.Self, tag.Binding.RelativeSource!.Mode);
+        }
+
+        [Fact]
+        public void Serialize_should_round_trip_special_value_kinds()
+        {
+            var original = ArxuiSerializer.Deserialize(JsonModel);
+
+            var serialized = ArxuiSerializer.Serialize(original!);
+            var roundTripped = ArxuiSerializer.Deserialize(serialized);
+
+            Assert.NotNull(roundTripped);
+            Assert.Equal(original!.SchemaVersion, roundTripped!.SchemaVersion);
+            Assert.Equal(original.Kind, roundTripped.Kind);
+            Assert.Equal(original.Root.TypeName, roundTripped.Root.TypeName);
+
+            var roundTrippedBackground = Assert.IsType<ResourceValue>(roundTripped.Root.Properties["Background"]);
+            Assert.Equal("BackgroundBrush", roundTrippedBackground.Key);
+
+            var roundTrippedContent = Assert.IsType<NodeValue>(roundTripped.Root.Properties["Content"]);
+            var roundTrippedSource = Assert.IsType<UriReferenceValue>(roundTrippedContent.Node.Properties["Source"]);
+            Assert.Equal("/Assets/avatar.png", roundTrippedSource.Path);
+            Assert.Equal("Sample.Assembly", roundTrippedSource.Assembly);
+
+            var roundTrippedTag = Assert.IsType<BindingValue>(roundTripped.Root.Properties["Tag"]);
+            Assert.Equal("UserName", roundTrippedTag.Binding.Path);
+            Assert.Equal(BindingMode.TwoWay, roundTrippedTag.Binding.Mode);
+            Assert.Equal("Hello {0}", roundTrippedTag.Binding.StringFormat);
+            Assert.NotNull(roundTrippedTag.Binding.RelativeSource);
+            Assert.Equal(RelativeSourceMode.Self, roundTrippedTag.Binding.RelativeSource!.Mode);
+            Assert.Contains(@"""$resource"": ""BackgroundBrush""", serialized);
+            Assert.Contains(@"""$binding"": ""UserName""", serialized);
+            Assert.Contains(@"""$asset"": {", serialized);
+            Assert.Contains(@"""Assembly"": ""Sample.Assembly""", serialized);
+        }
+
+        [Fact]
+        public void Deserialize_should_support_legacy_root_properties_shape()
+        {
+            const string legacyJson = @"
+{
+  ""SchemaVersion"": 1,
+  ""AssetType"": ""Window"",
+  ""Properties"": {
+    ""Title"": ""Legacy Window""
+  }
+}
+";
+
+            var document = ArxuiSerializer.Deserialize(legacyJson);
+
+            Assert.NotNull(document);
+            Assert.Equal(UiDocumentKind.Window, document!.Kind);
+            Assert.Equal("Avalonia.Controls.Window", document.Root.TypeName);
+            var title = Assert.IsType<ScalarValue>(document.Root.Properties["Title"]);
+            Assert.Equal("Legacy Window", title.Value);
+        }
+    }
+}
