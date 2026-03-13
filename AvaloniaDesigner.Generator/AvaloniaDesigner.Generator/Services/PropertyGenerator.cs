@@ -2,7 +2,7 @@
 using System.CodeDom.Compiler;
 using System.Collections.Generic;
 using System.Linq;
-using AvaloniaDesigner.Generator.Models;
+using AvaloniaDesigner.Contracts;
 using Microsoft.CodeAnalysis;
 
 namespace AvaloniaDesigner.Generator.Services

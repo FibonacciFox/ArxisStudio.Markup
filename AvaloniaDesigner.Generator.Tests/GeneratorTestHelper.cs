@@ -1,9 +1,11 @@
 using System;
 using System.Collections.Immutable;
 using System.Linq;
+using Avalonia.Controls;
 using AvaloniaDesigner.Generator;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using Xunit.Sdk;
 
 namespace AvaloniaDesigner.Generator.Tests
 {
@@ -11,9 +13,10 @@ namespace AvaloniaDesigner.Generator.Tests
     {
         public static ImmutableArray<GeneratedSourceResult> RunGenerator(
             string userSource,
+            string userSourcePath,
             params (string path, string content)[] additionalFiles)
         {
-            var syntaxTree = CSharpSyntaxTree.ParseText(userSource);
+            var syntaxTree = CSharpSyntaxTree.ParseText(userSource, path: userSourcePath);
 
             // 🔹 Берём ВСЕ загруженные сборки (включая Avalonia) и добавляем как MetadataReference
             var references = AppDomain.CurrentDomain
@@ -22,6 +25,12 @@ namespace AvaloniaDesigner.Generator.Tests
                 .Select(a => MetadataReference.CreateFromFile(a.Location))
                 .Cast<MetadataReference>()
                 .ToList();
+
+            var avaloniaReference = MetadataReference.CreateFromFile(typeof(Control).Assembly.Location);
+            if (!references.Any(reference => reference.Display == avaloniaReference.Display))
+            {
+                references.Add(avaloniaReference);
+            }
 
             var compilation = CSharpCompilation.Create(
                 assemblyName: "TestAssembly",
@@ -58,6 +67,24 @@ namespace AvaloniaDesigner.Generator.Tests
             return runResult.Results
                 .SelectMany(r => r.GeneratedSources)
                 .ToImmutableArray();
+        }
+
+        public static string GetGeneratedSource(
+            string userSource,
+            string userSourcePath,
+            string hintName,
+            params (string path, string content)[] additionalFiles)
+        {
+            var generatedSources = RunGenerator(userSource, userSourcePath, additionalFiles);
+            var generated = generatedSources.FirstOrDefault(source => source.HintName == hintName);
+
+            if (generated.HintName == null)
+            {
+                throw new XunitException(
+                    $"Generated source '{hintName}' was not found. Available: {string.Join(", ", generatedSources.Select(source => source.HintName))}");
+            }
+
+            return generated.SourceText.ToString();
         }
     }
 }

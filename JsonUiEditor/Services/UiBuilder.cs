@@ -1,171 +1,187 @@
-using Avalonia.Controls;
-using Avalonia.Media;
-using Avalonia;
 using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Globalization;
 using System.Linq;
 using System.Reflection;
-using JsonUiEditor.Models;
-using Newtonsoft.Json.Linq;
-using System.ComponentModel;
-using System.Collections.Generic;
+using Avalonia;
+using Avalonia.Controls;
+using Avalonia.Media;
+using AvaloniaDesigner.Contracts;
 
 namespace JsonUiEditor.Services
 {
     public static class UiBuilder
     {
-        private static readonly Dictionary<string, Type> _typeCache = new();
+        private static readonly Dictionary<string, Type> TypeCache = new();
 
-        public static Control Build(ControlModel model)
+        public static Control Build(PropertyModel model)
         {
+            if (string.IsNullOrWhiteSpace(model.Type))
+            {
+                return new TextBlock { Text = "Error: Root control type is missing", Foreground = Brushes.Red };
+            }
+
             var controlType = FindType(model.Type);
             if (controlType == null)
+            {
                 return new TextBlock { Text = $"Error: Type '{model.Type}' not found", Foreground = Brushes.Red };
+            }
 
             var control = (Control)Activator.CreateInstance(controlType)!;
 
-            if (model.Properties != null)
+            foreach (var property in model.Properties)
             {
-                foreach (var prop in model.Properties)
-                {
-                    ApplyProperty(control, prop.Key, prop.Value);
-                }
+                ApplyProperty(control, property.Key, property.Value);
             }
-            
+
             return control;
         }
 
-        private static void ApplyProperty(Control control, string propName, object value)
+        private static void ApplyProperty(Control control, string propertyName, PropertyModel model)
         {
-            object? convertedValue = null; 
-            
             try
             {
-                // 1. ПОИСК И УСТАНОВКА ATTACHED СВОЙСТВ (через статический метод Set*)
-                Type targetType;
-                if (propName.Contains("."))
+                if (propertyName.Contains("."))
                 {
-                    var setMethod = FindAttachedPropertySetMethod(propName);
-                    if (setMethod != null)
+                    ApplyAttachedProperty(control, propertyName, model);
+                    return;
+                }
+
+                if (model.Items is { Count: > 0 })
+                {
+                    ApplyCollectionProperty(control, propertyName, model.Items);
+                    return;
+                }
+
+                if (!string.IsNullOrWhiteSpace(model.Type))
+                {
+                    var complexObject = CreateComplexObject(model);
+                    if (complexObject != null)
                     {
-                         // Тип для конвертации берется из второго параметра метода Set*
-                         targetType = setMethod.GetParameters()[1].ParameterType; 
-                         convertedValue = ConvertPrimitive(value, targetType); 
-                         
-                         if (convertedValue != null)
-                         {
-                             // Вызываем Canvas.SetLeft(control, convertedValue)
-                             setMethod.Invoke(null, new object[] { control, convertedValue });
-                             return; 
-                         }
+                        SetComplexProperty(control, propertyName, complexObject);
                     }
+
+                    return;
                 }
-                
-                // 2. ОБРАБОТКА КОЛЛЕКЦИЙ
-                if (value is JArray jArray)
+
+                // Designer preview currently ignores runtime-only concepts that need Avalonia binding/resource context.
+                if (!string.IsNullOrWhiteSpace(model.BindingPath) ||
+                    !string.IsNullOrWhiteSpace(model.ResourceKey) ||
+                    !string.IsNullOrWhiteSpace(model.AssetPath))
                 {
-                    ApplyCollectionProperty(control, propName, jArray);
-                    return; 
+                    return;
                 }
-                
-                // 3. ОБРАБОТКА СЛОЖНЫХ ОБЪЕКТОВ И ВЛОЖЕННЫХ КОНТРОЛОВ (JObject)
-                if (value is JObject jObject)
+
+                var avaloniaProperty = AvaloniaPropertyRegistry.Instance.FindRegistered(control, propertyName);
+                var targetType = avaloniaProperty?.PropertyType;
+
+                if (targetType == null)
                 {
-                    if (jObject.ContainsKey("Binding"))
+                    var propertyInfo = control.GetType().GetProperty(propertyName);
+                    if (propertyInfo == null || !propertyInfo.CanWrite)
                     {
-                        // Логика Binding будет здесь
                         return;
                     }
 
-                    var nestedModel = jObject.ToObject<ControlModel>();
-                    if (nestedModel == null || string.IsNullOrEmpty(nestedModel.Type)) return;
-                    
-                    var complexObject = CreateComplexObject(nestedModel);
-                    if (complexObject == null) return;
-                    
-                    SetComplexProperty(control, propName, complexObject);
+                    targetType = propertyInfo.PropertyType;
+                }
+
+                var convertedValue = ConvertPropertyValue(model, targetType);
+                if (convertedValue == null)
+                {
                     return;
                 }
-                
-                // 4. ОБРАБОТКА СТАНДАРТНЫХ СВОЙСТВ 
-                
-                var avaloniaProp = AvaloniaPropertyRegistry.Instance.FindRegistered(control, propName);
 
-                if (avaloniaProp != null)
+                if (avaloniaProperty != null)
                 {
-                    targetType = avaloniaProp.PropertyType;
+                    control.SetValue(avaloniaProperty, convertedValue);
                 }
                 else
                 {
-                    var propInfo = control.GetType().GetProperty(propName);
-                    if (propInfo == null || !propInfo.CanWrite) return;
-                    targetType = propInfo.PropertyType;
-                }
-                
-                convertedValue = ConvertPrimitive(value, targetType); 
-                
-                if (convertedValue != null)
-                {
-                    if (avaloniaProp != null)
-                        control.SetValue(avaloniaProp, convertedValue);
-                    else
-                        control.GetType().GetProperty(propName)?.SetValue(control, convertedValue);
+                    control.GetType().GetProperty(propertyName)?.SetValue(control, convertedValue);
                 }
             }
-            catch (Exception ex)
+            catch
             {
-                // Логгирование
+                // Preview should stay resilient even when a single property cannot be rendered.
             }
         }
 
-        private static MethodInfo? FindAttachedPropertySetMethod(string propName)
+        private static void ApplyAttachedProperty(Control control, string propertyName, PropertyModel model)
         {
-            int lastDotIndex = propName.LastIndexOf('.');
-            if (lastDotIndex == -1) return null;
+            var setter = FindAttachedPropertySetMethod(propertyName);
+            if (setter == null)
+            {
+                return;
+            }
 
-            string ownerTypeNameFull = propName.Substring(0, lastDotIndex);
-            string propertyName = propName.Substring(lastDotIndex + 1);
-            string setMethodName = "Set" + propertyName; 
+            var targetType = setter.GetParameters()[1].ParameterType;
+            var convertedValue = ConvertPropertyValue(model, targetType);
+            if (convertedValue == null)
+            {
+                return;
+            }
 
-            Type? ownerType = FindType(ownerTypeNameFull); 
-            
-            if (ownerType == null) return null;
-
-            var candidateMethods = ownerType.GetMethods(BindingFlags.Public | BindingFlags.Static)
-                .Where(m => m.Name == setMethodName)
-                .Where(m => m.GetParameters().Length == 2)
-                .Where(m => typeof(AvaloniaObject).IsAssignableFrom(m.GetParameters()[0].ParameterType))
-                .FirstOrDefault();
-
-            return candidateMethods;
+            setter.Invoke(null, new[] { control, convertedValue });
         }
 
-        private static void ApplyCollectionProperty(object parentObject, string propName, JArray jArray)
+        private static MethodInfo? FindAttachedPropertySetMethod(string propertyName)
         {
-            var collectionProp = parentObject.GetType().GetProperty(propName);
-            if (collectionProp == null) return;
+            var lastDotIndex = propertyName.LastIndexOf('.');
+            if (lastDotIndex == -1)
+            {
+                return null;
+            }
 
-            var collection = collectionProp.GetValue(parentObject);
-            if (collection == null) return;
+            var ownerTypeName = propertyName.Substring(0, lastDotIndex);
+            var attachedPropertyName = propertyName.Substring(lastDotIndex + 1);
+            var setterName = "Set" + attachedPropertyName;
+
+            var ownerType = FindType(ownerTypeName);
+            if (ownerType == null)
+            {
+                return null;
+            }
+
+            return ownerType.GetMethods(BindingFlags.Public | BindingFlags.Static)
+                .Where(method => method.Name == setterName)
+                .Where(method => method.GetParameters().Length == 2)
+                .FirstOrDefault(method => typeof(AvaloniaObject).IsAssignableFrom(method.GetParameters()[0].ParameterType));
+        }
+
+        private static void ApplyCollectionProperty(object parentObject, string propertyName, IReadOnlyCollection<PropertyModel> items)
+        {
+            var collectionProperty = parentObject.GetType().GetProperty(propertyName);
+            if (collectionProperty == null)
+            {
+                return;
+            }
+
+            var collection = collectionProperty.GetValue(parentObject);
+            if (collection == null)
+            {
+                return;
+            }
 
             var addMethod = collection.GetType().GetMethod("Add");
-            if (addMethod == null) return;
-            
-            foreach (var jToken in jArray)
+            if (addMethod == null)
+            {
+                return;
+            }
+
+            var collectionItemType = addMethod.GetParameters().FirstOrDefault()?.ParameterType ?? typeof(object);
+            foreach (var item in items)
             {
                 object? builtItem = null;
-                
-                if (jToken is JObject)
+
+                if (!string.IsNullOrWhiteSpace(item.Type))
                 {
-                    var childModel = jToken.ToObject<ControlModel>();
-                    if (childModel != null)
-                    {
-                        builtItem = CreateComplexObject(childModel);
-                    }
+                    builtItem = CreateComplexObject(item);
                 }
-                else
+                else if (item.Value != null)
                 {
-                    var collectionType = addMethod.GetParameters().FirstOrDefault()?.ParameterType ?? typeof(object);
-                    builtItem = ConvertPrimitive(jToken.Value<object>()!, collectionType);
+                    builtItem = ConvertPrimitive(item.Value, collectionItemType);
                 }
 
                 if (builtItem != null)
@@ -175,97 +191,132 @@ namespace JsonUiEditor.Services
             }
         }
 
-        private static object? CreateComplexObject(ControlModel model)
+        private static object? CreateComplexObject(PropertyModel model)
         {
-            if (typeof(Control).IsAssignableFrom(FindType(model.Type)))
+            var resolvedType = FindType(model.Type);
+            if (resolvedType == null)
+            {
+                return null;
+            }
+
+            if (typeof(Control).IsAssignableFrom(resolvedType))
             {
                 return Build(model);
             }
 
-            var complexType = FindType(model.Type);
-            if (complexType == null) return null;
-            
-            var complexObject = Activator.CreateInstance(complexType);
-            if (complexObject == null) return null;
-            
-            if (model.Properties != null)
+            var complexObject = Activator.CreateInstance(resolvedType);
+            if (complexObject == null)
             {
-                foreach(var nestedProp in model.Properties)
-                {
-                    if (nestedProp.Value is JArray jArray)
-                    {
-                        ApplyCollectionProperty(complexObject, nestedProp.Key, jArray);
-                        continue;
-                    }
-                    
-                    var objPropInfo = complexObject.GetType().GetProperty(nestedProp.Key);
-                    if (objPropInfo != null && objPropInfo.CanWrite)
-                    {
-                        object? convertedValue = ConvertPrimitive(nestedProp.Value, objPropInfo.PropertyType);
-                        objPropInfo.SetValue(complexObject, convertedValue);
-                    }
-                }
+                return null;
             }
+
+            foreach (var nestedProperty in model.Properties)
+            {
+                if (nestedProperty.Value.Items is { Count: > 0 })
+                {
+                    ApplyCollectionProperty(complexObject, nestedProperty.Key, nestedProperty.Value.Items);
+                    continue;
+                }
+
+                var propertyInfo = complexObject.GetType().GetProperty(nestedProperty.Key);
+                if (propertyInfo == null || !propertyInfo.CanWrite)
+                {
+                    continue;
+                }
+
+                var convertedValue = ConvertPropertyValue(nestedProperty.Value, propertyInfo.PropertyType);
+                propertyInfo.SetValue(complexObject, convertedValue);
+            }
+
             return complexObject;
         }
 
-        private static void SetComplexProperty(Control control, string propName, object complexObject)
+        private static void SetComplexProperty(Control control, string propertyName, object complexObject)
         {
-            var propInfo = control.GetType().GetProperty(propName);
-            if (propInfo != null && propInfo.CanWrite)
+            var propertyInfo = control.GetType().GetProperty(propertyName);
+            if (propertyInfo != null && propertyInfo.CanWrite)
             {
-                propInfo.SetValue(control, complexObject);
+                propertyInfo.SetValue(control, complexObject);
             }
+        }
+
+        private static object? ConvertPropertyValue(PropertyModel model, Type targetType)
+        {
+            if (model.Value == null)
+            {
+                return null;
+            }
+
+            return ConvertPrimitive(model.Value, targetType);
         }
 
         private static object? ConvertPrimitive(object value, Type targetType)
         {
-            string strValue = value.ToString()!;
-            
+            var stringValue = Convert.ToString(value, CultureInfo.InvariantCulture) ?? string.Empty;
+
             if (targetType.IsEnum)
             {
-                 return Enum.Parse(targetType, strValue);
+                return Enum.Parse(targetType, stringValue);
             }
-            
+
             var parser = targetType.GetMethod("Parse", BindingFlags.Public | BindingFlags.Static, null, new[] { typeof(string) }, null);
             if (parser != null)
             {
-                return parser.Invoke(null, new object[] { strValue });
+                return parser.Invoke(null, new object[] { stringValue });
             }
 
             var converter = TypeDescriptor.GetConverter(targetType);
             if (converter.CanConvertFrom(typeof(string)))
             {
-                return converter.ConvertFrom(strValue);
+                return converter.ConvertFromInvariantString(stringValue);
             }
 
-            if (targetType == typeof(string)) return strValue;
-            if (targetType == typeof(double)) return double.Parse(strValue);
-            if (targetType == typeof(int)) return int.Parse(strValue);
-            if (targetType == typeof(bool)) return bool.Parse(strValue);
+            if (targetType == typeof(string))
+            {
+                return stringValue;
+            }
 
-            return value; 
+            if (targetType == typeof(double))
+            {
+                return double.Parse(stringValue, CultureInfo.InvariantCulture);
+            }
+
+            if (targetType == typeof(int))
+            {
+                return int.Parse(stringValue, CultureInfo.InvariantCulture);
+            }
+
+            if (targetType == typeof(bool))
+            {
+                return bool.Parse(stringValue);
+            }
+
+            return value;
         }
 
         private static Type? FindType(string? typeName)
         {
-            if (_typeCache.TryGetValue(typeName, out var type)) return type;
-
-            Type? typeFound = null;
-
-            // 1. Поиск по EXACT имени
-            foreach (var asm in AppDomain.CurrentDomain.GetAssemblies())
+            if (string.IsNullOrWhiteSpace(typeName))
             {
-                typeFound = asm.GetType(typeName);
-                if (typeFound != null)
+                return null;
+            }
+
+            if (TypeCache.TryGetValue(typeName, out var cachedType))
+            {
+                return cachedType;
+            }
+
+            foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
+            {
+                var exactType = assembly.GetType(typeName);
+                if (exactType != null)
                 {
-                    _typeCache[typeName] = typeFound;
-                    return typeFound;
+                    TypeCache[typeName] = exactType;
+                    return exactType;
                 }
             }
 
-            // 2. Поиск с общими префиксами
-            string[] commonPrefixes = 
+            var commonPrefixes = new[]
             {
                 "Avalonia.Controls.",
                 "Avalonia.Controls.Shapes.",
@@ -274,18 +325,18 @@ namespace JsonUiEditor.Services
 
             foreach (var prefix in commonPrefixes)
             {
-                string prefixedName = prefix + typeName;
-                foreach (var asm in AppDomain.CurrentDomain.GetAssemblies())
+                var prefixedName = prefix + typeName;
+                foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
                 {
-                    typeFound = asm.GetType(prefixedName);
-                    if (typeFound != null)
+                    var prefixedType = assembly.GetType(prefixedName);
+                    if (prefixedType != null)
                     {
-                        _typeCache[typeName] = typeFound;
-                        return typeFound;
+                        TypeCache[typeName] = prefixedType;
+                        return prefixedType;
                     }
                 }
             }
-            
+
             return null;
         }
     }

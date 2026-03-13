@@ -25,4 +25,8 @@
         <PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.1"/>
         <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
     </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\AvaloniaDesigner.Contracts\AvaloniaDesigner.Contracts.csproj" />
+    </ItemGroup>
 </Project>

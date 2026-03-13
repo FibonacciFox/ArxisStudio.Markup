@@ -3,25 +3,17 @@ using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
 using System.Text;
+using AvaloniaDesigner.Contracts;
 using AvaloniaDesigner.Generator.Builders;
-using AvaloniaDesigner.Generator.Models;
 using AvaloniaDesigner.Generator.Services;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Text;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Serialization;
 
 namespace AvaloniaDesigner.Generator
 {
     [Generator(LanguageNames.CSharp)]
     public class FormGenerator : IIncrementalGenerator
     {
-        private static readonly JsonSerializerSettings _jsonSettings = new JsonSerializerSettings
-        {
-            ContractResolver = new DefaultContractResolver { NamingStrategy = new CamelCaseNamingStrategy(false, true) },
-            Converters = { new PropertyModelConverter() }
-        };
-
         public void Initialize(IncrementalGeneratorInitializationContext context)
         {
             var assetsPipeline = context.AdditionalTextsProvider
@@ -38,13 +30,13 @@ namespace AvaloniaDesigner.Generator
                 Execute(spc, source.Left, source.Right));
         }
 
-        private static (AvaloniaModel? Model, Exception? Error) ParseJson(AdditionalText text)
+        private static (AssetModel? Model, Exception? Error) ParseJson(AdditionalText text)
         {
             var jsonContent = text.GetText()?.ToString();
             if (string.IsNullOrWhiteSpace(jsonContent)) return (null, null);
             try
             {
-                var model = JsonConvert.DeserializeObject<AvaloniaModel>(jsonContent!, _jsonSettings);
+                var model = AssetSerializer.Deserialize(jsonContent!);
                 return (model, null);
             }
             catch (Exception ex) { return (null, ex); }
@@ -53,7 +45,7 @@ namespace AvaloniaDesigner.Generator
         private void Execute(
             SourceProductionContext context,
             Compilation compilation,
-            ImmutableArray<(AvaloniaModel? Asset, string FilePath, string FileName, Exception? Error)> inputs)
+            ImmutableArray<(AssetModel? Asset, string FilePath, string FileName, Exception? Error)> inputs)
         {
             if (inputs.IsDefaultOrEmpty) return;
 

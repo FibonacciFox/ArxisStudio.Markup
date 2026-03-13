@@ -18,29 +18,27 @@ namespace TestApp.Forms
 
         private const string JsonModel = @"
 {
-  ""FormName"": ""SolidColorBrush"",
-  ""NamespaceSuffix"": ""Forms"",
-  ""ParentClassType"": ""Avalonia.Controls.UserControl"",
+  ""AssetType"": ""UserControl"",
   ""Properties"": {
     ""Content"": {
       ""Type"": ""Avalonia.Controls.Border"",
       ""Properties"": {
-        ""Name"": { ""Value"": ""NamedBorder"" },
-        ""BorderThickness"": { ""Value"": ""3"" },
-        ""BorderBrush"": { ""Value"": ""Gray"" },
+        ""Name"": ""NamedBorder"",
+        ""BorderThickness"": ""3"",
+        ""BorderBrush"": ""Gray"",
 
         ""Background"": {
           ""Type"": ""Avalonia.Media.SolidColorBrush"",
           ""Properties"": {
-            ""Color"": { ""Value"": ""LightGreen"" },
-            ""Opacity"": { ""Value"": ""0.5"" }
+            ""Color"": ""LightGreen"",
+            ""Opacity"": 0.5
           }
         },
 
         ""Child"": {
           ""Type"": ""Avalonia.Controls.TextBlock"",
           ""Properties"": {
-            ""Text"": { ""Value"": ""Hello Brush!"" }
+            ""Text"": ""Hello Brush!""
           }
         }
       }
@@ -52,20 +50,13 @@ namespace TestApp.Forms
         [Fact]
         public void Opacity_should_be_generated_as_literal_not_double_parse()
         {
-            // act
-            var generated = GeneratorTestHelper.RunGenerator(
+            var solidColorBrushSource = GeneratorTestHelper.GetGeneratedSource(
                 DummyUserControlSource,
-                ("SolidColorBrush.Model.json", JsonModel));
+                "SolidColorBrush.cs",
+                "TestApp.Forms.SolidColorBrush.g.cs",
+                ("SolidColorBrush.Asset", JsonModel));
 
-            var solidColorBrushSource = generated
-                .FirstOrDefault(g => g.HintName == "SolidColorBrush.g.cs")
-                .SourceText
-                .ToString();
-
-            // assert: нет double.Parse("0.5")
             Assert.DoesNotContain("double.Parse(\"0.5\")", solidColorBrushSource);
-
-            // assert: есть присваивание литерала 0.5
             Assert.Contains("Opacity = 0.5", solidColorBrushSource);
         }
     }

@@ -17,12 +17,9 @@ namespace TestApp.Forms
 }
 ";
 
-        // JSON c кучей enum-ов на обычных свойствах
         private const string EnumJsonModel = @"
 {
-  ""FormName"": ""EnumTestControl"",
-  ""NamespaceSuffix"": ""Forms"",
-  ""ParentClassType"": ""Avalonia.Controls.UserControl"",
+  ""AssetType"": ""UserControl"",
   ""Properties"": {
     ""Content"": {
       ""Type"": ""Avalonia.Controls.Border"",
@@ -30,12 +27,12 @@ namespace TestApp.Forms
         ""Child"": {
           ""Type"": ""Avalonia.Controls.TextBlock"",
           ""Properties"": {
-            ""Name"": { ""Value"": ""EnumText"" },
-            ""Text"": { ""Value"": ""Hello enums!"" },
-            ""HorizontalAlignment"": { ""Value"": ""Center"" },
-            ""VerticalAlignment"": { ""Value"": ""Bottom"" },
-            ""TextWrapping"": { ""Value"": ""Wrap"" },
-            ""FontWeight"": { ""Value"": ""Bold"" }
+            ""Name"": ""EnumText"",
+            ""Text"": ""Hello enums!"",
+            ""HorizontalAlignment"": ""Center"",
+            ""VerticalAlignment"": ""Bottom"",
+            ""TextWrapping"": ""Wrap"",
+            ""FontWeight"": ""Bold""
           }
         }
       }
@@ -44,23 +41,20 @@ namespace TestApp.Forms
 }
 ";
 
-        // JSON для проверки attached enum: DockPanel.Dock
         private const string DockPanelJsonModel = @"
 {
-  ""FormName"": ""DockPanelControl"",
-  ""NamespaceSuffix"": ""Forms"",
-  ""ParentClassType"": ""Avalonia.Controls.UserControl"",
+  ""AssetType"": ""UserControl"",
   ""Properties"": {
     ""Content"": {
       ""Type"": ""Avalonia.Controls.DockPanel"",
       ""Properties"": {
-        ""Name"": { ""Value"": ""RootDock"" },
+        ""Name"": ""RootDock"",
         ""Children"": [
           {
             ""Type"": ""Avalonia.Controls.Border"",
             ""Properties"": {
-              ""Name"": { ""Value"": ""TopBorder"" },
-              ""Avalonia.Controls.DockPanel.Dock"": { ""Value"": ""Top"" }
+              ""Name"": ""TopBorder"",
+              ""Avalonia.Controls.DockPanel.Dock"": ""Top""
             }
           }
         ]
@@ -73,37 +67,22 @@ namespace TestApp.Forms
         [Fact]
         public void Enum_properties_should_be_generated_with_fully_qualified_enum_members()
         {
-            // act
-            var generated = GeneratorTestHelper.RunGenerator(
+            var source = GeneratorTestHelper.GetGeneratedSource(
                 DummyUserControlSource,
-                ("EnumTestControl.Model.json", EnumJsonModel));
+                "EnumTestControl.cs",
+                "TestApp.Forms.EnumTestControl.g.cs",
+                ("EnumTestControl.Asset", EnumJsonModel));
 
-            var source = generated
-                .FirstOrDefault(g => g.HintName == "EnumTestControl.g.cs")
-                .SourceText
-                .ToString();
-            
-            Assert.Fail(source);
-
-            // Проверяем, что текстовый блок объявлен
             Assert.Contains("internal global::Avalonia.Controls.TextBlock EnumText;", source);
-
-            // HorizontalAlignment.Center
             Assert.Contains(
                 "this.EnumText.HorizontalAlignment = global::Avalonia.Layout.HorizontalAlignment.Center;",
                 source);
-
-            // VerticalAlignment.Bottom
             Assert.Contains(
                 "this.EnumText.VerticalAlignment = global::Avalonia.Layout.VerticalAlignment.Bottom;",
                 source);
-
-            // TextWrapping.Wrap
             Assert.Contains(
                 "this.EnumText.TextWrapping = global::Avalonia.Media.TextWrapping.Wrap;",
                 source);
-
-            // FontWeight.Bold
             Assert.Contains(
                 "this.EnumText.FontWeight = global::Avalonia.Media.FontWeight.Bold;",
                 source);
@@ -123,21 +102,13 @@ namespace TestApp.Forms
 }
 ";
 
-            var generated = GeneratorTestHelper.RunGenerator(
+            var source = GeneratorTestHelper.GetGeneratedSource(
                 dockPanelUserControlSource,
-                ("DockPanelControl.Model.json", DockPanelJsonModel));
-
-            var source = generated
-                .FirstOrDefault(g => g.HintName == "DockPanelControl.g.cs")
-                .SourceText
-                .ToString();
+                "DockPanelControl.cs",
+                "TestApp.Forms.DockPanelControl.g.cs",
+                ("DockPanelControl.Asset", DockPanelJsonModel));
             
-            Assert.Fail(source);
-            
-            // Поле TopBorder
             Assert.Contains("internal global::Avalonia.Controls.Border TopBorder;", source);
-
-            // Attached property: DockPanel.SetDock(..., Dock.Top)
             Assert.Contains(
                 "global::Avalonia.Controls.DockPanel.SetDock(this.TopBorder, global::Avalonia.Controls.Dock.Top);",
                 source);

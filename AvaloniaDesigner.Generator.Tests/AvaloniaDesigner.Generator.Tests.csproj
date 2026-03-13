@@ -25,6 +25,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\AvaloniaDesigner.Generator\AvaloniaDesigner.Generator\AvaloniaDesigner.Generator.csproj" />
+      <ProjectReference Include="..\AvaloniaDesigner.Contracts\AvaloniaDesigner.Contracts.csproj" />
     </ItemGroup>
 
 </Project>

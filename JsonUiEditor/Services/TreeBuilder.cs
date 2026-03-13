@@ -1,3 +1,4 @@
+using AvaloniaDesigner.Contracts;
 using JsonUiEditor.Models;
 using Newtonsoft.Json.Linq;
 using System.Collections.ObjectModel;
@@ -20,9 +21,9 @@ namespace JsonUiEditor.Services
                 return null;
             }
 
-            // Создаем фиктивный корневой узел, который представляет окно/форму
+            // Создаем фиктивный корневой узел, который представляет весь asset.
             var rootNode = new ControlNode(propertiesObject, rootJson, "RootProperties");
-            rootNode.DisplayName = rootJson["FormName"]?.ToString() ?? "Root Form";
+            rootNode.DisplayName = rootJson["AssetType"]?.ToObject<AssetType?>()?.ToString() ?? "Root Asset";
             
             // Рекурсивно строим дерево, начиная со свойств окна
             BuildTreeRecursive(propertiesObject, rootNode.Children);

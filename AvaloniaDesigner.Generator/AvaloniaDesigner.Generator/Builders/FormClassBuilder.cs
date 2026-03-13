@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using AvaloniaDesigner.Contracts;
 using AvaloniaDesigner.Generator.Models;
 using AvaloniaDesigner.Generator.Services;
 using AvaloniaDesigner.Generator.Utility;
@@ -22,7 +23,7 @@ namespace AvaloniaDesigner.Generator.Builders
             _context = context;
         }
 
-        public string Build(AvaloniaModel model, ClassInfo classInfo, string assemblyName, string fileName)
+        public string Build(AssetModel model, ClassInfo classInfo, string assemblyName, string fileName)
         {
             using var stringWriter = new StringWriter();
             using var writer = new IndentedTextWriter(stringWriter, "    ");
@@ -64,7 +65,7 @@ namespace AvaloniaDesigner.Generator.Builders
             return stringWriter.ToString();
         }
 
-        private void BuildMethodBody(IndentedTextWriter writer, AvaloniaModel model, string baseClassName, string assemblyName, string fileName)
+        private void BuildMethodBody(IndentedTextWriter writer, AssetModel model, string baseClassName, string assemblyName, string fileName)
         {
             var propertyGenerator = new PropertyGenerator(_resolver, _formatter, _context, assemblyName, fileName);
             
@@ -84,7 +85,7 @@ namespace AvaloniaDesigner.Generator.Builders
             }
         }
         
-        private List<ControlInfo> CollectFields(AvaloniaModel model, string? baseClassName)
+        private List<ControlInfo> CollectFields(AssetModel model, string? baseClassName)
         {
              var controls = new List<ControlInfo>();
              var parentType = baseClassName != null ? _resolver.ResolveType(baseClassName) : null;

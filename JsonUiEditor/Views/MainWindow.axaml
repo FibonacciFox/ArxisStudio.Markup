@@ -100,7 +100,7 @@
                                                    VerticalAlignment="Center"/>
                                         
                                         <TextBox Grid.Column="1" 
-                                                 Text="{Binding Value, Mode=TwoWay}"
+                                                 Text="{Binding Value, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                                  Watermark="{Binding Name}"
                                                  VerticalContentAlignment="Center"/>
                                     </Grid>

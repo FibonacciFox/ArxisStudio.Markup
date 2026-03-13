@@ -1,19 +1,20 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
+﻿using AvaloniaDesigner.Contracts;
+using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Avalonia.Controls;
-using Newtonsoft.Json;
-using JsonUiEditor.Models;
 using JsonUiEditor.Services;
 using System;
 using System.Linq;
 using Newtonsoft.Json.Linq;
 using System.Collections.ObjectModel;
-using Avalonia.Media;
+using JsonUiEditor.Models;
 
 namespace JsonUiEditor.ViewModels
 {
     public partial class MainWindowViewModel : ObservableObject
     {
+        private bool _suppressJsonTextChanged;
+
         [ObservableProperty]
         private string _jsonText = "";
 
@@ -83,11 +84,8 @@ namespace JsonUiEditor.ViewModels
 
         public MainWindowViewModel()
         {
-            // Ваш JSON-пример
             JsonText = @"{
-  ""FormName"": ""DrawingSurface"",
-  ""NamespaceSuffix"": ""Forms"",
-  ""ParentClassType"": ""Avalonia.Controls.UserControl"",
+  ""AssetType"": ""UserControl"",
   ""Properties"": {
     ""Width"": 600,
     ""Height"": 600,
@@ -125,18 +123,28 @@ namespace JsonUiEditor.ViewModels
     }
   }
 }";
-            DesignerService.Instance.JsonChanged += UpdateUIFromRootModel;
+            DesignerService.Instance.JsonChanged += OnJsonChanged;
             UpdateTreeAndUIFromText();
+        }
+
+        private void OnJsonChanged(DesignerChangeKind changeKind)
+        {
+            UpdateUIFromRootModel(changeKind == DesignerChangeKind.Structure);
         }
 
         partial void OnJsonTextChanged(string value)
         {
+            if (_suppressJsonTextChanged)
+            {
+                return;
+            }
+
             UpdateTreeAndUIFromText();
         }
 
-        partial void OnSelectedNodeChanged(ControlNode? oldNode, ControlNode? newNode)
+        partial void OnSelectedNodeChanged(ControlNode? oldValue, ControlNode? newValue)
         {
-            LoadProperties(newNode);
+            LoadProperties(newValue);
             // Явно оповещаем команду об изменении SelectedNode
             DeleteSelectedControlCommand.NotifyCanExecuteChanged(); 
         }
@@ -162,7 +170,7 @@ namespace JsonUiEditor.ViewModels
             }
         }
 
-        private void UpdateUIFromRootModel()
+        private void UpdateUIFromRootModel(bool rebuildTree = true)
         {
             if (ControlTreeRoot?.ParentJsonContainer == null) return;
             
@@ -172,29 +180,41 @@ namespace JsonUiEditor.ViewModels
             try
             {
                 var rootJson = (JObject)ControlTreeRoot.ParentJsonContainer;
-                var rootModel = rootJson.ToObject<RootModel>();
+                var rootModel = AssetSerializer.Deserialize(rootJson.ToString());
                 
                 if (rootModel == null || rootModel.Properties == null) return;
 
                 // 2. Обновляем JsonText (СИНХРОНИЗАЦИЯ)
-                JsonText = JsonConvert.SerializeObject(rootModel, Formatting.Indented);
+                _suppressJsonTextChanged = true;
+                try
+                {
+                    JsonText = AssetSerializer.Serialize(rootModel);
+                }
+                finally
+                {
+                    _suppressJsonTextChanged = false;
+                }
 
                 // 3. Строим UI (Рендеринг)
-                if (rootModel.Properties.TryGetValue("Content", out object? contentToken) && contentToken is JObject jObject)
+                if (rootModel.Properties.TryGetValue("Content", out var contentModel))
                 {
-                    var contentModel = jObject.ToObject<ControlModel>();
-                    var builtControl = UiBuilder.Build(contentModel!);
+                    var builtControl = UiBuilder.Build(contentModel);
 
                     // Обертывание в корневой контейнер
                     var rootContainer = new Border
                     {
-                        Width = rootModel.Properties.ContainsKey("Width") ? Convert.ToDouble(rootModel.Properties["Width"]) : double.NaN,
-                        Height = rootModel.Properties.ContainsKey("Height") ? Convert.ToDouble(rootModel.Properties["Height"]) : double.NaN,
+                        Width = GetScalarDouble(rootModel.Properties, "Width"),
+                        Height = GetScalarDouble(rootModel.Properties, "Height"),
                         Child = builtControl
                     };
                     RenderedContent = rootContainer;
                 }
                 
+                if (!rebuildTree)
+                {
+                    return;
+                }
+
                 // 4. ПЕРЕСТРАИВАЕМ ДЕРЕВО: Это создает НОВЫЕ ControlNode объекты
                 ControlTreeRoot = TreeBuilder.BuildTree(rootJson);
                 
@@ -219,6 +239,18 @@ namespace JsonUiEditor.ViewModels
             {
                 ErrorMessage = $"Rendering Error: {ex.Message}";
             }
+        }
+
+        private static double GetScalarDouble(
+            System.Collections.Generic.IReadOnlyDictionary<string, PropertyModel> properties,
+            string propertyName)
+        {
+            if (!properties.TryGetValue(propertyName, out var property) || property.Value == null)
+            {
+                return double.NaN;
+            }
+
+            return Convert.ToDouble(property.Value);
         }
 
         // Вспомогательный метод: ищет узел в дереве по ссылке на исходный JObject
@@ -258,7 +290,7 @@ namespace JsonUiEditor.ViewModels
                     {
                         var item = new PropertyItem(
                             prop.Name, 
-                            jValue.Value, 
+                            jValue, 
                             propertiesObject
                         );
                         EditableProperties.Add(item);
@@ -300,7 +332,7 @@ namespace JsonUiEditor.ViewModels
             }
 
             childrenArray.Add(newControlJson);
-            DesignerService.Instance.NotifyJsonChanged();
+            DesignerService.Instance.NotifyJsonChanged(DesignerChangeKind.Structure);
             ErrorMessage = "";
         }
 
@@ -322,12 +354,12 @@ namespace JsonUiEditor.ViewModels
             }
 
             SelectedNode = null;
-            DesignerService.Instance.NotifyJsonChanged();
+            DesignerService.Instance.NotifyJsonChanged(DesignerChangeKind.Structure);
             ErrorMessage = "";
         }
 
         public bool CanDeleteSelectedControl => SelectedNode != null && 
                                                SelectedNode.ParentJsonContainer != null && 
-                                               SelectedNode.DisplayName != "Root Form";
+                                               SelectedNode.DisplayName != "Root Asset";
     }
 }

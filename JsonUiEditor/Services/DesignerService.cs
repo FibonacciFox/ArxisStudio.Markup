@@ -1,8 +1,13 @@
 using System;
-using Newtonsoft.Json.Linq;
 
 namespace JsonUiEditor.Services
 {
+    public enum DesignerChangeKind
+    {
+        Structure,
+        PropertyValue
+    }
+
     /// <summary>
     /// Сервис для управления глобальным состоянием конструктора и синхронизации.
     /// Используется как Singleton для оповещения об изменениях JSON.
@@ -16,14 +21,14 @@ namespace JsonUiEditor.Services
         /// Событие, которое срабатывает при изменении JSON через панель свойств
         /// или через манипуляции с деревом.
         /// </summary>
-        public event Action? JsonChanged;
+        public event Action<DesignerChangeKind>? JsonChanged;
 
         /// <summary>
         /// Вызывается при изменении JSON в любой части модели.
         /// </summary>
-        public void NotifyJsonChanged()
+        public void NotifyJsonChanged(DesignerChangeKind changeKind = DesignerChangeKind.Structure)
         {
-            JsonChanged?.Invoke();
+            JsonChanged?.Invoke(changeKind);
         }
     }
 }
