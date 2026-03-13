@@ -1,5 +1,6 @@
 using System.Linq;
 using ArxisStudio.Markup.Json;
+using Newtonsoft.Json;
 using Xunit;
 
 namespace ArxisStudio.Markup.Json.Generator.Tests
@@ -9,7 +10,8 @@ namespace ArxisStudio.Markup.Json.Generator.Tests
         private const string JsonModel = @"
 {
   ""SchemaVersion"": 1,
-  ""Kind"": ""UserControl"",
+  ""Kind"": ""Control"",
+  ""Class"": ""Sample.Views.ProfileView"",
   ""Root"": {
     ""TypeName"": ""Avalonia.Controls.UserControl"",
     ""Properties"": {
@@ -48,7 +50,8 @@ namespace ArxisStudio.Markup.Json.Generator.Tests
 
             Assert.NotNull(document);
             Assert.Equal(1, document!.SchemaVersion);
-            Assert.Equal(UiDocumentKind.UserControl, document.Kind);
+            Assert.Equal(UiDocumentKind.Control, document.Kind);
+            Assert.Equal("Sample.Views.ProfileView", document.Class);
             Assert.Equal("Avalonia.Controls.UserControl", document.Root.TypeName);
 
             var background = Assert.IsType<ResourceValue>(document.Root.Properties["Background"]);
@@ -78,6 +81,7 @@ namespace ArxisStudio.Markup.Json.Generator.Tests
             Assert.NotNull(roundTripped);
             Assert.Equal(original!.SchemaVersion, roundTripped!.SchemaVersion);
             Assert.Equal(original.Kind, roundTripped.Kind);
+            Assert.Equal(original.Class, roundTripped.Class);
             Assert.Equal(original.Root.TypeName, roundTripped.Root.TypeName);
 
             var roundTrippedBackground = Assert.IsType<ResourceValue>(roundTripped.Root.Properties["Background"]);
@@ -117,9 +121,27 @@ namespace ArxisStudio.Markup.Json.Generator.Tests
 
             Assert.NotNull(document);
             Assert.Equal(UiDocumentKind.Window, document!.Kind);
+            Assert.Null(document.Class);
             Assert.Equal("Avalonia.Controls.Window", document.Root.TypeName);
             var title = Assert.IsType<ScalarValue>(document.Root.Properties["Title"]);
             Assert.Equal("Legacy Window", title.Value);
+        }
+
+        [Fact]
+        public void Deserialize_should_reject_unsupported_document_kind()
+        {
+            const string invalidJson = @"
+{
+  ""SchemaVersion"": 1,
+  ""Kind"": ""UserControl"",
+  ""Root"": {
+    ""TypeName"": ""Avalonia.Controls.UserControl"",
+    ""Properties"": {}
+  }
+}
+";
+
+            Assert.Throws<JsonSerializationException>(() => ArxuiSerializer.Deserialize(invalidJson));
         }
     }
 }

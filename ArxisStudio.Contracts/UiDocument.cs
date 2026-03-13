@@ -5,15 +5,15 @@ namespace ArxisStudio.Markup.Json;
 public sealed record UiDocument(
     int SchemaVersion,
     UiDocumentKind Kind,
+    string? Class,
     UiNode Root);
 
 public enum UiDocumentKind
 {
-    UserControl,
+    Control,
     Window,
     Styles,
-    ResourceDictionary,
-    CustomControl
+    ResourceDictionary
 }
 
 public sealed record UiNode(

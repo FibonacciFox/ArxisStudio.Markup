@@ -1,8 +1,9 @@
 {
   "SchemaVersion": 1,
-  "Kind": "UserControl",
+  "Kind": "Control",
+  "Class": "ArxisStudio.Markup.Sample.Forms.SolidColorBrush",
   "Root": {
-    "TypeName": "Avalonia.Controls.UserControl",
+    "TypeName": "Avalonia.Controls.ContentControl",
     "Properties": {
       "Width": 400,
       "Height": 250,

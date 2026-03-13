@@ -11,7 +11,7 @@ namespace ArxisStudio.Markup.Json.Generator.Tests
 {
     internal static class GeneratorTestHelper
     {
-        public static ImmutableArray<GeneratedSourceResult> RunGenerator(
+        public static GeneratorDriverRunResult RunGenerator(
             string userSource,
             string userSourcePath,
             params (string path, string content)[] additionalFiles)
@@ -54,19 +54,7 @@ namespace ArxisStudio.Markup.Json.Generator.Tests
                 out var outputCompilation,
                 out var diagnostics);
 
-            var errors = diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error).ToArray();
-            if (errors.Length > 0)
-            {
-                throw new Xunit.Sdk.XunitException(
-                    "Generator produced compilation errors:\n" +
-                    string.Join("\n", errors.Select(e => e.ToString())));
-            }
-
-            var runResult = driver.GetRunResult();
-
-            return runResult.Results
-                .SelectMany(r => r.GeneratedSources)
-                .ToImmutableArray();
+            return driver.GetRunResult();
         }
 
         public static string GetGeneratedSource(
@@ -75,7 +63,10 @@ namespace ArxisStudio.Markup.Json.Generator.Tests
             string hintName,
             params (string path, string content)[] additionalFiles)
         {
-            var generatedSources = RunGenerator(userSource, userSourcePath, additionalFiles);
+            var runResult = RunGenerator(userSource, userSourcePath, additionalFiles);
+            var generatedSources = runResult.Results
+                .SelectMany(r => r.GeneratedSources)
+                .ToImmutableArray();
             var generated = generatedSources.FirstOrDefault(source => source.HintName == hintName);
 
             if (generated.HintName == null)
@@ -85,6 +76,18 @@ namespace ArxisStudio.Markup.Json.Generator.Tests
             }
 
             return generated.SourceText.ToString();
+        }
+
+        public static ImmutableArray<Diagnostic> GetGeneratorDiagnostics(
+            string userSource,
+            string userSourcePath,
+            params (string path, string content)[] additionalFiles)
+        {
+            var runResult = RunGenerator(userSource, userSourcePath, additionalFiles);
+
+            return runResult.Results
+                .SelectMany(r => r.Diagnostics)
+                .ToImmutableArray();
         }
     }
 }

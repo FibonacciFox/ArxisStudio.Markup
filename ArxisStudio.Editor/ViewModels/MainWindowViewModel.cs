@@ -86,7 +86,7 @@ namespace ArxisStudio.Markup.Json.Loader.ViewModels
         {
             JsonText = @"{
   ""SchemaVersion"": 1,
-  ""Kind"": ""UserControl"",
+  ""Kind"": ""Control"",
   ""Root"": {
     ""TypeName"": ""Avalonia.Controls.UserControl"",
     ""Properties"": {

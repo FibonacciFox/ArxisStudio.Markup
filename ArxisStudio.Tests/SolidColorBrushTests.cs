@@ -19,9 +19,10 @@ namespace TestApp.Forms
         private const string JsonModel = @"
 {
   ""SchemaVersion"": 1,
-  ""Kind"": ""UserControl"",
+  ""Kind"": ""Control"",
+  ""Class"": ""TestApp.Forms.SolidColorBrush"",
   ""Root"": {
-    ""TypeName"": ""Avalonia.Controls.UserControl"",
+    ""TypeName"": ""Avalonia.Controls.ContentControl"",
     ""Properties"": {
       ""Content"": {
         ""TypeName"": ""Avalonia.Controls.Border"",

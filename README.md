@@ -39,9 +39,10 @@
 
 1. Представление объявляется как обычный `partial`-класс Avalonia.
 2. Отдельный `.arxui`-файл описывает дерево контролов и значения свойств.
-3. Генератор находит подходящий `partial`-класс по имени файла.
-4. Генератор создаёт реализацию `partial`-класса с методом `InitializeComponent()`.
-5. Сгенерированный код создаёт контролы, присваивает свойства, настраивает Avalonia-свойства, вложенные объекты и коллекции.
+3. `.arxui` явно указывает целевой CLR-тип через поле `Class`.
+4. Генератор валидирует согласованность `Kind`, `Class` и `Root.TypeName`.
+5. Генератор создаёт реализацию `partial`-класса с методом `InitializeComponent()`.
+6. Сгенерированный код создаёт контролы, присваивает свойства, настраивает Avalonia-свойства, вложенные объекты и коллекции.
 
 ## Зачем это нужно
 
@@ -117,9 +118,10 @@ public partial class SolidColorBrush : ContentControl
 ```json
 {
   "SchemaVersion": 1,
-  "Kind": "UserControl",
+  "Kind": "Control",
+  "Class": "MyApp.Views.SolidColorBrush",
   "Root": {
-    "TypeName": "Avalonia.Controls.UserControl",
+    "TypeName": "Avalonia.Controls.ContentControl",
     "Properties": {
       "Width": 400,
       "Height": 250,
@@ -137,6 +139,14 @@ public partial class SolidColorBrush : ContentControl
 ```
 
 Во время сборки генератор превращает это описание в C#-код, который создаёт дерево контролов и вызывает его из `InitializeComponent()`.
+
+Поле `Class` обязательно для build-time генерации и должно содержать полное имя `partial`-класса, в который будет сгенерирован `InitializeComponent()`.
+
+`Kind` теперь обозначает категорию документа для tooling. Для визуальных документов используется `Control`, а конкретный корневой тип задаётся через `Root.TypeName`.
+
+Генератор дополнительно проверяет, что `Kind` совместим и с `Class`, и с `Root.TypeName`, а также что целевой CLR-тип совместим с объявленным корневым типом.
+
+`SchemaVersion: 1` в текущем состоянии проекта рассматривается как нестабильный внутренний контракт и может меняться без backward compatibility.
 
 ## Сборка и запуск
 

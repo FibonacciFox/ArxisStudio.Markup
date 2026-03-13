@@ -8,21 +8,13 @@ namespace ArxisStudio.Markup.Json.Generator
         public static readonly DiagnosticDescriptor TypeNotFound = new DiagnosticDescriptor("ADG0002", "Type Not Found", "Type '{0}' not found", "Design", DiagnosticSeverity.Error, true);
         public static readonly DiagnosticDescriptor PropertyNotFound = new DiagnosticDescriptor("ADG0003", "Property Not Found", "Property '{0}' not found on '{1}'", "Design", DiagnosticSeverity.Warning, true);
         public static readonly DiagnosticDescriptor EventNotFound = new DiagnosticDescriptor("ADG0004", "Event Not Found", "Event '{0}' not found on '{1}'", "Design", DiagnosticSeverity.Error, true);
-
-        public static readonly DiagnosticDescriptor PartialClassNotFound = new DiagnosticDescriptor(
-            id: "ADG0005",
-            title: "Partial Class Not Found",
-            messageFormat: "Could not find a C# partial class file for '{0}'. Expected '{1}' in the project.",
-            category: "Design",
-            defaultSeverity: DiagnosticSeverity.Error,
-            isEnabledByDefault: true);
-
-        public static readonly DiagnosticDescriptor AmbiguousPartialClass = new DiagnosticDescriptor(
-            id: "ADG0006",
-            title: "Ambiguous Partial Class",
-            messageFormat: "Found multiple C# files matching '{0}': {1}. Please rename files to be unique.",
-            category: "Design",
-            defaultSeverity: DiagnosticSeverity.Error,
-            isEnabledByDefault: true);
+        public static readonly DiagnosticDescriptor TargetClassMissing = new DiagnosticDescriptor("ADG0005", "Target Class Missing", "Asset file '{0}' must declare a 'Class' value with the target CLR type", "Design", DiagnosticSeverity.Error, true);
+        public static readonly DiagnosticDescriptor TargetClassNotFound = new DiagnosticDescriptor("ADG0006", "Target Class Not Found", "Could not resolve target CLR type '{1}' declared in '{0}'", "Design", DiagnosticSeverity.Error, true);
+        public static readonly DiagnosticDescriptor TargetClassMustBePartial = new DiagnosticDescriptor("ADG0007", "Target Class Must Be Partial", "Target CLR type '{1}' declared in '{0}' must be partial", "Design", DiagnosticSeverity.Error, true);
+        public static readonly DiagnosticDescriptor DocumentKindMismatch = new DiagnosticDescriptor("ADG0008", "Document Kind Mismatch", "Asset file '{0}' declares kind '{1}' but target CLR type '{2}' is not compatible", "Design", DiagnosticSeverity.Error, true);
+        public static readonly DiagnosticDescriptor DuplicateTargetClass = new DiagnosticDescriptor("ADG0009", "Duplicate Target Class", "Target CLR type '{0}' is declared by multiple asset files: {1}", "Design", DiagnosticSeverity.Error, true);
+        public static readonly DiagnosticDescriptor RootTypeKindMismatch = new DiagnosticDescriptor("ADG0010", "Root Type Kind Mismatch", "Asset file '{0}' declares root type '{1}' which is not compatible with document kind '{2}'", "Design", DiagnosticSeverity.Error, true);
+        public static readonly DiagnosticDescriptor RootTypeTargetClassMismatch = new DiagnosticDescriptor("ADG0011", "Root Type Target Class Mismatch", "Asset file '{0}' declares root type '{1}' which is not compatible with target CLR type '{2}'", "Design", DiagnosticSeverity.Error, true);
+        public static readonly DiagnosticDescriptor GeneratorCrash = new DiagnosticDescriptor("ADG9999", "Generator Crash", "Unhandled exception while generating '{0}': {1}", "Gen", DiagnosticSeverity.Error, true);
     }
 }

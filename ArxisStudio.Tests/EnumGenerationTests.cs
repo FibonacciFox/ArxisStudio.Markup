@@ -20,7 +20,8 @@ namespace TestApp.Forms
         private const string EnumJsonModel = @"
 {
   ""SchemaVersion"": 1,
-  ""Kind"": ""UserControl"",
+  ""Kind"": ""Control"",
+  ""Class"": ""TestApp.Forms.EnumTestControl"",
   ""Root"": {
     ""TypeName"": ""Avalonia.Controls.UserControl"",
     ""Properties"": {
@@ -48,7 +49,8 @@ namespace TestApp.Forms
         private const string DockPanelJsonModel = @"
 {
   ""SchemaVersion"": 1,
-  ""Kind"": ""UserControl"",
+  ""Kind"": ""Control"",
+  ""Class"": ""TestApp.Forms.DockPanelControl"",
   ""Root"": {
     ""TypeName"": ""Avalonia.Controls.UserControl"",
     ""Properties"": {

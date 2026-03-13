@@ -1,7 +1,4 @@
-﻿using System.Linq;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
+﻿using Microsoft.CodeAnalysis;
 
 namespace ArxisStudio.Markup.Json.Generator.Services
 {
@@ -21,37 +18,16 @@ namespace ArxisStudio.Markup.Json.Generator.Services
 
     public static class RoslynParser
     {
-        public static ClassInfo? ParseClassInfo(SyntaxTree tree)
+        public static ClassInfo ParseClassInfo(INamedTypeSymbol typeSymbol)
         {
-            var root = tree.GetRoot();
-            
-            var classDecl = root.DescendantNodes().OfType<ClassDeclarationSyntax>().FirstOrDefault();
-            if (classDecl == null) return null;
-
-            string className = classDecl.Identifier.Text;
-            string ns = GetNamespace(classDecl);
-            
-            string? baseClass = null;
-            if (classDecl.BaseList != null && classDecl.BaseList.Types.Count > 0)
-            {
-                baseClass = classDecl.BaseList.Types[0].Type.ToString();
-            }
+            var className = typeSymbol.Name;
+            var containingNamespace = typeSymbol.ContainingNamespace;
+            var ns = containingNamespace == null || containingNamespace.IsGlobalNamespace
+                ? "Global"
+                : containingNamespace.ToDisplayString();
+            var baseClass = typeSymbol.BaseType?.ToDisplayString();
 
             return new ClassInfo(className, ns, baseClass);
-        }
-
-        private static string GetNamespace(SyntaxNode syntax)
-        {
-            if (syntax.Parent is FileScopedNamespaceDeclarationSyntax fileScoped)
-                return fileScoped.Name.ToString();
-            
-            if (syntax.Parent is NamespaceDeclarationSyntax blockScoped)
-                return blockScoped.Name.ToString();
-
-            if (syntax.Parent != null)
-                return GetNamespace(syntax.Parent);
-
-            return "Global";
         }
     }
 }

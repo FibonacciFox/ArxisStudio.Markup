@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
@@ -7,6 +8,7 @@ using ArxisStudio.Markup.Json;
 using ArxisStudio.Markup.Json.Generator.Builders;
 using ArxisStudio.Markup.Json.Generator.Services;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
 
 namespace ArxisStudio.Markup.Json.Generator
@@ -51,8 +53,15 @@ namespace ArxisStudio.Markup.Json.Generator
 
             var typeResolver = new TypeResolver(compilation);
             var builder = new ComponentSourceBuilder(typeResolver, context);
-            
             string assemblyName = compilation.AssemblyName ?? "AvaloniaApp";
+            var duplicateClasses = inputs
+                .Where(i => i.Document is not null && !string.IsNullOrWhiteSpace(i.Document.Class))
+                .GroupBy(i => i.Document!.Class!, StringComparer.Ordinal)
+                .Where(g => g.Count() > 1)
+                .ToDictionary(
+                    g => g.Key,
+                    g => string.Join(", ", g.Select(i => i.FileName).OrderBy(n => n, StringComparer.Ordinal)),
+                    StringComparer.Ordinal);
 
             foreach (var input in inputs)
             {
@@ -63,30 +72,94 @@ namespace ArxisStudio.Markup.Json.Generator
                 }
                 if (input.Document is null) continue;
 
-                string baseName = Path.GetFileNameWithoutExtension(input.FileName);
-                string targetCs = $"{baseName}.arxui.cs";
-
-                var matchingTrees = compilation.SyntaxTrees.Where(t => 
+                var rootType = typeResolver.ResolveType(input.Document.Root.TypeName);
+                if (rootType == null)
                 {
-                    string fName = Path.GetFileName(t.FilePath);
-                    return fName.Equals(targetCs, StringComparison.OrdinalIgnoreCase);
-                }).ToList();
-
-                if (matchingTrees.Count == 0)
-                {
-                    context.ReportDiagnostic(Diagnostic.Create(DiagnosticDescriptors.PartialClassNotFound, Location.None, input.FileName, targetCs));
+                    context.ReportDiagnostic(Diagnostic.Create(
+                        DiagnosticDescriptors.TypeNotFound,
+                        Location.None,
+                        input.Document.Root.TypeName));
                     continue;
                 }
 
-                if (matchingTrees.Count > 1)
+                if (!IsDocumentKindCompatible(input.Document.Kind, rootType, typeResolver))
                 {
-                    string foundPaths = string.Join(", ", matchingTrees.Select(t => t.FilePath));
-                    context.ReportDiagnostic(Diagnostic.Create(DiagnosticDescriptors.AmbiguousPartialClass, Location.None, input.FileName, foundPaths));
+                    context.ReportDiagnostic(Diagnostic.Create(
+                        DiagnosticDescriptors.RootTypeKindMismatch,
+                        Location.None,
+                        input.FileName,
+                        input.Document.Root.TypeName,
+                        input.Document.Kind));
                     continue;
                 }
 
-                var classInfo = RoslynParser.ParseClassInfo(matchingTrees[0]);
-                if (classInfo == null) continue;
+                if (string.IsNullOrWhiteSpace(input.Document.Class))
+                {
+                    if (RequiresTargetClass(input.Document.Kind))
+                    {
+                        context.ReportDiagnostic(Diagnostic.Create(
+                            DiagnosticDescriptors.TargetClassMissing,
+                            Location.None,
+                            input.FileName));
+                    }
+                    continue;
+                }
+
+                var targetClassName = input.Document.Class!;
+                var targetType = compilation.GetTypeByMetadataName(targetClassName);
+                if (targetType == null)
+                {
+                    context.ReportDiagnostic(Diagnostic.Create(
+                        DiagnosticDescriptors.TargetClassNotFound,
+                        Location.None,
+                        input.FileName,
+                        targetClassName));
+                    continue;
+                }
+
+                var classInfo = RoslynParser.ParseClassInfo(targetType);
+
+                if (duplicateClasses.TryGetValue(targetClassName, out var duplicateFiles))
+                {
+                    context.ReportDiagnostic(Diagnostic.Create(
+                        DiagnosticDescriptors.DuplicateTargetClass,
+                        Location.None,
+                        targetClassName,
+                        duplicateFiles));
+                    continue;
+                }
+
+                if (!IsPartial(targetType))
+                {
+                    context.ReportDiagnostic(Diagnostic.Create(
+                        DiagnosticDescriptors.TargetClassMustBePartial,
+                        Location.None,
+                        input.FileName,
+                        targetClassName));
+                    continue;
+                }
+
+                if (!IsDocumentKindCompatible(input.Document.Kind, targetType, typeResolver))
+                {
+                    context.ReportDiagnostic(Diagnostic.Create(
+                        DiagnosticDescriptors.DocumentKindMismatch,
+                        Location.None,
+                        input.FileName,
+                        input.Document.Kind,
+                        targetClassName));
+                    continue;
+                }
+
+                if (!typeResolver.IsAssignableTo(targetType, input.Document.Root.TypeName))
+                {
+                    context.ReportDiagnostic(Diagnostic.Create(
+                        DiagnosticDescriptors.RootTypeTargetClassMismatch,
+                        Location.None,
+                        input.FileName,
+                        input.Document.Root.TypeName,
+                        targetClassName));
+                    continue;
+                }
 
                 try
                 {
@@ -97,9 +170,43 @@ namespace ArxisStudio.Markup.Json.Generator
                 catch (Exception ex)
                 {
                     context.ReportDiagnostic(Diagnostic.Create(
-                        new DiagnosticDescriptor("ADG9999", "Crash", $"{ex.Message}", "Gen", DiagnosticSeverity.Error, true), Location.None));
+                        DiagnosticDescriptors.GeneratorCrash,
+                        Location.None,
+                        input.FileName,
+                        ex.Message));
                 }
             }
+        }
+
+        private static bool IsPartial(INamedTypeSymbol typeSymbol)
+        {
+            foreach (var syntaxReference in typeSymbol.DeclaringSyntaxReferences)
+            {
+                if (syntaxReference.GetSyntax() is ClassDeclarationSyntax classDeclaration &&
+                    classDeclaration.Modifiers.Any(m => m.IsKind(Microsoft.CodeAnalysis.CSharp.SyntaxKind.PartialKeyword)))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static bool RequiresTargetClass(UiDocumentKind kind)
+        {
+            return kind is UiDocumentKind.Control or UiDocumentKind.Window;
+        }
+
+        private static bool IsDocumentKindCompatible(UiDocumentKind kind, INamedTypeSymbol targetType, TypeResolver typeResolver)
+        {
+            return kind switch
+            {
+                UiDocumentKind.Window => typeResolver.IsAssignableTo(targetType, "Avalonia.Controls.Window"),
+                UiDocumentKind.Control => typeResolver.IsAssignableTo(targetType, "Avalonia.Controls.Control"),
+                UiDocumentKind.Styles => typeResolver.IsAssignableTo(targetType, "Avalonia.Styling.Styles"),
+                UiDocumentKind.ResourceDictionary => typeResolver.IsAssignableTo(targetType, "Avalonia.Controls.ResourceDictionary"),
+                _ => true
+            };
         }
     }
 }

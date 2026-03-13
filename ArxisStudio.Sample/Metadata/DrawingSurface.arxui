@@ -1,6 +1,7 @@
 {
   "SchemaVersion": 1,
-  "Kind": "UserControl",
+  "Kind": "Control",
+  "Class": "ArxisStudio.Markup.Sample.Forms.DrawingSurface",
   "Root": {
     "TypeName": "Avalonia.Controls.UserControl",
     "Properties": {

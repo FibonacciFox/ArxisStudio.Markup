@@ -18,7 +18,8 @@ namespace TestApp.Views
         private const string JsonModel = @"
 {
   ""SchemaVersion"": 1,
-  ""Kind"": ""UserControl"",
+  ""Kind"": ""Control"",
+  ""Class"": ""TestApp.Views.BindingResourceAssetControl"",
   ""Root"": {
     ""TypeName"": ""Avalonia.Controls.UserControl"",
     ""Properties"": {

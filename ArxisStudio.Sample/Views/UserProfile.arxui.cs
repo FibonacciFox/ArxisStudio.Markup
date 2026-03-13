@@ -2,7 +2,7 @@
 
 namespace ArxisStudio.Markup.Sample.Views;
 
-public partial class UserProfile : UserControl
+public partial class UserProfile : MyControl
 {
     public UserProfile()
     {

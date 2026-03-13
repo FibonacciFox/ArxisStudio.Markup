@@ -1,8 +1,9 @@
 {
   "SchemaVersion": 1,
-  "Kind": "UserControl",
+  "Kind": "Control",
+  "Class": "ArxisStudio.Markup.Sample.Views.UserProfile",
   "Root": {
-    "TypeName": "Avalonia.Controls.UserControl",
+    "TypeName": "ArxisStudio.Markup.Sample.Views.MyControl",
     "Properties": {
       "Avalonia.Controls.Design.Width": 800,
       "Avalonia.Controls.Design.Height": 600,

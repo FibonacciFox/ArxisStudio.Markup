@@ -1,6 +1,7 @@
 {
   "SchemaVersion": 1,
   "Kind": "Window",
+  "Class": "ArxisStudio.Markup.Sample.Forms.DockPanelWindow",
   "Root": {
     "TypeName": "Avalonia.Controls.Window",
     "Properties": {

@@ -17,13 +17,19 @@ public static class ArxuiSerializer
 
     public static UiDocument? Deserialize(JObject root)
     {
-        var kind = Enum.TryParse<UiDocumentKind>(root["Kind"]?.ToString(), out var parsedKind)
-            ? parsedKind
-            : Enum.TryParse<UiDocumentKind>(root["AssetType"]?.ToString(), out parsedKind)
-                ? parsedKind
-                : UiDocumentKind.UserControl;
+        var kindToken = root["Kind"] ?? root["AssetType"];
+        UiDocumentKind kind;
+        if (kindToken == null)
+        {
+            kind = UiDocumentKind.Control;
+        }
+        else if (!Enum.TryParse(kindToken.ToString(), ignoreCase: true, out kind))
+        {
+            throw new JsonSerializationException($"Unsupported document kind '{kindToken}'.");
+        }
 
         var schemaVersion = root["SchemaVersion"]?.Value<int>() ?? CurrentSchemaVersion;
+        var className = root["Class"]?.ToString();
         var rootToken = root["Root"];
 
         UiNode rootNode;
@@ -42,7 +48,7 @@ public static class ArxuiSerializer
             return null;
         }
 
-        return new UiDocument(schemaVersion, kind, rootNode);
+        return new UiDocument(schemaVersion, kind, className, rootNode);
     }
 
     public static string Serialize(UiDocument document)
@@ -53,6 +59,11 @@ public static class ArxuiSerializer
             ["Kind"] = document.Kind.ToString(),
             ["Root"] = WriteNode(document.Root)
         };
+
+        if (!string.IsNullOrWhiteSpace(document.Class))
+        {
+            root["Class"] = document.Class;
+        }
 
         return root.ToString(Formatting.Indented);
     }
@@ -289,7 +300,6 @@ public static class ArxuiSerializer
             UiDocumentKind.Window => "Avalonia.Controls.Window",
             UiDocumentKind.Styles => "Avalonia.Styling.Styles",
             UiDocumentKind.ResourceDictionary => "Avalonia.Controls.ResourceDictionary",
-            UiDocumentKind.CustomControl => "Avalonia.Controls.Control",
             _ => "Avalonia.Controls.UserControl"
         };
     }
