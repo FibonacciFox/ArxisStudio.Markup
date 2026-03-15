@@ -35,6 +35,8 @@ namespace ArxisStudio.Editor.Services
             var control = (Control)Activator.CreateInstance(controlType)!;
             var resourceScope = new Dictionary<string, object?>(StringComparer.Ordinal);
 
+            ApplyDesignMetadata(control, node.Design);
+
             ApplyResources(control, node.Resources, resourceScope, projectContext);
             ApplyStyles(control, node.Styles, projectContext);
 
@@ -44,6 +46,24 @@ namespace ArxisStudio.Editor.Services
             }
 
             return control;
+        }
+
+        private static void ApplyDesignMetadata(Control control, UiNodeDesign? design)
+        {
+            if (design == null)
+            {
+                return;
+            }
+
+            if (design.Hidden == true)
+            {
+                control.IsVisible = false;
+            }
+
+            if (design.IgnorePreviewInput == true)
+            {
+                control.IsHitTestVisible = false;
+            }
         }
 
         private static void ApplyProperty(

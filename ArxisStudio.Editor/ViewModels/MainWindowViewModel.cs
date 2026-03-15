@@ -69,6 +69,12 @@ namespace ArxisStudio.Editor.ViewModels
         [ObservableProperty]
         private bool _isProjectRunning;
 
+        [ObservableProperty]
+        private double _previewSurfaceWidth = 1280;
+
+        [ObservableProperty]
+        private double _previewSurfaceHeight = 800;
+
         public bool IsDesignerMode => WorkspaceMode == "Designer";
 
         public bool IsSourceMode => WorkspaceMode == "Source";
@@ -284,6 +290,9 @@ namespace ArxisStudio.Editor.ViewModels
                 var rootModel = ArxuiSerializer.Deserialize(rootJson.ToString());
                 
                 if (rootModel == null) return;
+
+                PreviewSurfaceWidth = rootModel.Design?.SurfaceWidth ?? 1280;
+                PreviewSurfaceHeight = rootModel.Design?.SurfaceHeight ?? 800;
 
                 // 2. Обновляем JsonText (СИНХРОНИЗАЦИЯ)
                 _suppressJsonTextChanged = true;

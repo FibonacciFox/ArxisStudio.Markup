@@ -63,6 +63,11 @@
                                   "Properties": {
                                     "Classes": "primary-action",
                                     "Content": "Открыть в дизайнере"
+                                  },
+                                  "$design": {
+                                    "IgnorePreviewInput": true,
+                                    "AllowMove": true,
+                                    "AllowResize": false
                                   }
                                 },
                                 {
@@ -70,6 +75,11 @@
                                   "Properties": {
                                     "Classes": "secondary-action",
                                     "Content": "Просмотреть JSON"
+                                  },
+                                  "$design": {
+                                    "IgnorePreviewInput": true,
+                                    "AllowMove": true,
+                                    "AllowResize": false
                                   }
                                 }
                               ]
@@ -78,6 +88,12 @@
                         ]
                       }
                     }
+                  },
+                  "$design": {
+                    "Locked": false,
+                    "IgnorePreviewInput": true,
+                    "AllowMove": true,
+                    "AllowResize": true
                   }
                 },
                 {
@@ -120,6 +136,11 @@
                               ]
                             }
                           }
+                        },
+                        "$design": {
+                          "IgnorePreviewInput": true,
+                          "AllowMove": true,
+                          "AllowResize": true
                         }
                       },
                       {
@@ -156,6 +177,11 @@
                               ]
                             }
                           }
+                        },
+                        "$design": {
+                          "IgnorePreviewInput": true,
+                          "AllowMove": true,
+                          "AllowResize": true
                         }
                       },
                       {
@@ -192,6 +218,11 @@
                               ]
                             }
                           }
+                        },
+                        "$design": {
+                          "IgnorePreviewInput": true,
+                          "AllowMove": true,
+                          "AllowResize": true
                         }
                       }
                     ]
@@ -238,6 +269,11 @@
                               ]
                             }
                           }
+                        },
+                        "$design": {
+                          "IgnorePreviewInput": true,
+                          "AllowMove": true,
+                          "AllowResize": true
                         }
                       },
                       {
@@ -275,6 +311,11 @@
                               ]
                             }
                           }
+                        },
+                        "$design": {
+                          "IgnorePreviewInput": true,
+                          "AllowMove": true,
+                          "AllowResize": true
                         }
                       },
                       {
@@ -312,14 +353,29 @@
                               ]
                             }
                           }
+                        },
+                        "$design": {
+                          "IgnorePreviewInput": true,
+                          "AllowMove": true,
+                          "AllowResize": true
                         }
                       }
                     ]
                   }
                 }
               ]
+            },
+            "$design": {
+              "IgnorePreviewInput": true,
+              "AllowMove": false,
+              "AllowResize": false
             }
           }
+        },
+        "$design": {
+          "IgnorePreviewInput": true,
+          "AllowMove": false,
+          "AllowResize": false
         }
       }
     },
@@ -335,7 +391,16 @@
         }
       ],
       "LocalCardBrush": "#FF1B263B"
+    },
+    "$design": {
+      "IgnorePreviewInput": true,
+      "AllowMove": false,
+      "AllowResize": false
     }
   },
-  "Class": "ArxisStudio.Markup.Template.Forms.TemplateDashboard"
+  "Class": "ArxisStudio.Markup.Template.Forms.TemplateDashboard",
+  "$design": {
+    "SurfaceWidth": 600.0,
+    "SurfaceHeight": 800.0
+  }
 }

@@ -389,6 +389,8 @@
                                                         BorderBrush="{StaticResource StrokeBrush}"
                                                         BorderThickness="1"
                                                         Padding="40"
+                                                        Width="{Binding PreviewSurfaceWidth}"
+                                                        Height="{Binding PreviewSurfaceHeight}"
                                                         RenderTransformOrigin="0.5,0.5">
                                                     <Border.RenderTransform>
                                                         <ScaleTransform ScaleX="{Binding PreviewZoom}" ScaleY="{Binding PreviewZoom}" />
@@ -533,6 +535,8 @@
                                                             BorderBrush="{StaticResource StrokeBrush}"
                                                             BorderThickness="1"
                                                             Padding="40"
+                                                            Width="{Binding PreviewSurfaceWidth}"
+                                                            Height="{Binding PreviewSurfaceHeight}"
                                                             RenderTransformOrigin="0.5,0.5">
                                                         <Border.RenderTransform>
                                                             <ScaleTransform ScaleX="{Binding PreviewZoom}" ScaleY="{Binding PreviewZoom}" />
