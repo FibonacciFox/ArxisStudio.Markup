@@ -34,14 +34,14 @@
                             "TypeName": "Avalonia.Controls.TextBlock",
                             "Properties": {
                               "Classes": "eyebrow",
-                              "Text": "ArxisStudio Template"
+                              "Text": "Шаблон ArxisStudio"
                             }
                           },
                           {
                             "TypeName": "Avalonia.Controls.TextBlock",
                             "Properties": {
                               "Classes": "hero-title",
-                              "Text": "Design richer Avalonia screens from .arxui"
+                              "Text": "Проектируйте более выразительные Avalonia-экраны из .arxui"
                             }
                           },
                           {
@@ -49,7 +49,7 @@
                             "Properties": {
                               "Classes": "hero-copy",
                               "TextWrapping": "Wrap",
-                              "Text": "This template project is meant to be opened in ArxisStudio.Editor and in the sample app. It demonstrates project loading, external styles, merged resource dictionaries and a more realistic dashboard composition."
+                              "Text": "Этот шаблонный проект предназначен для открытия в ArxisStudio.Editor и для запуска как обычного приложения. Он демонстрирует загрузку проекта, внешние стили, merged resource dictionaries и более реалистичную dashboard-композицию."
                             }
                           },
                           {
@@ -62,14 +62,14 @@
                                   "TypeName": "Avalonia.Controls.Button",
                                   "Properties": {
                                     "Classes": "primary-action",
-                                    "Content": "Open in Designer"
+                                    "Content": "Открыть в дизайнере"
                                   }
                                 },
                                 {
                                   "TypeName": "Avalonia.Controls.Button",
                                   "Properties": {
                                     "Classes": "secondary-action",
-                                    "Content": "Inspect JSON"
+                                    "Content": "Просмотреть JSON"
                                   }
                                 }
                               ]
@@ -114,7 +114,7 @@
                                   "TypeName": "Avalonia.Controls.TextBlock",
                                   "Properties": {
                                     "Classes": "metric-label",
-                                    "Text": ".arxui documents"
+                                    "Text": ".arxui документов"
                                   }
                                 }
                               ]
@@ -150,7 +150,7 @@
                                   "TypeName": "Avalonia.Controls.TextBlock",
                                   "Properties": {
                                     "Classes": "metric-label",
-                                    "Text": "linked .axaml files"
+                                    "Text": "подключённых .axaml файлов"
                                   }
                                 }
                               ]
@@ -186,7 +186,7 @@
                                   "TypeName": "Avalonia.Controls.TextBlock",
                                   "Properties": {
                                     "Classes": "metric-label",
-                                    "Text": "runtime code executed"
+                                    "Text": "выполнено строк runtime-кода"
                                   }
                                 }
                               ]
@@ -224,7 +224,7 @@
                                   "TypeName": "Avalonia.Controls.TextBlock",
                                   "Properties": {
                                     "Classes": "card-title",
-                                    "Text": "Project-aware preview"
+                                    "Text": "Preview с учётом проекта"
                                   }
                                 },
                                 {
@@ -232,7 +232,7 @@
                                   "Properties": {
                                     "Classes": "card-copy",
                                     "TextWrapping": "Wrap",
-                                    "Text": "The editor reads the opened project, discovers .arxui documents and applies local styles and merged resources during preview."
+                                    "Text": "Редактор читает открытый проект, находит .arxui документы и применяет локальные стили и merged resources прямо во время preview."
                                   }
                                 }
                               ]
@@ -261,7 +261,7 @@
                                   "TypeName": "Avalonia.Controls.TextBlock",
                                   "Properties": {
                                     "Classes": "card-title",
-                                    "Text": "Safe design mode"
+                                    "Text": "Безопасный design mode"
                                   }
                                 },
                                 {
@@ -269,7 +269,7 @@
                                   "Properties": {
                                     "Classes": "card-copy",
                                     "TextWrapping": "Wrap",
-                                    "Text": "Preview uses the declarative model and project resources without executing user event handlers or application startup logic."
+                                    "Text": "Preview использует декларативную модель и ресурсы проекта без выполнения пользовательских обработчиков событий и application startup logic."
                                   }
                                 }
                               ]
@@ -298,7 +298,7 @@
                                   "TypeName": "Avalonia.Controls.TextBlock",
                                   "Properties": {
                                     "Classes": "card-title",
-                                    "Text": "Extensible model"
+                                    "Text": "Расширяемая модель"
                                   }
                                 },
                                 {
@@ -306,7 +306,7 @@
                                   "Properties": {
                                     "Classes": "card-copy",
                                     "TextWrapping": "Wrap",
-                                    "Text": "The layout, resources and styles remain data-driven, which keeps the designer generic instead of hardcoding a fixed widget catalog."
+                                    "Text": "Layout, ресурсы и стили остаются data-driven, благодаря чему конструктор остаётся универсальным и не завязан на жёстко заданный каталог виджетов."
                                   }
                                 }
                               ]

@@ -1,70 +1,70 @@
 # ArxisStudio.Markup
 
-`ArxisStudio.Markup` is a model-driven UI pipeline for Avalonia.
+`ArxisStudio.Markup` это model-driven pipeline для UI на Avalonia.
 
-Instead of authoring visual structure directly in XAML, the UI is stored as structured `.arxui` documents and turned into ordinary C# at build time through a Roslyn source generator. The goal is not to replace Avalonia XAML feature-for-feature. The goal is to provide a format that is predictable for tools, easy to transform, and generic enough to work with unknown controls, custom controls, and project-specific types without hardcoding them into the library.
+Вместо того чтобы описывать визуальную структуру напрямую в XAML, интерфейс хранится в структурированных `.arxui` документах, а затем на этапе сборки превращается в обычный C# через Roslyn source generator. Цель проекта не в том, чтобы заменить Avalonia XAML один в один. Цель в том, чтобы дать формат, который предсказуем для инструментов, удобен для трансформаций и достаточно универсален, чтобы работать с неизвестными контролами, пользовательскими контролами и проектными типами без хардкода в библиотеке.
 
-## What It Is
+## Что Это Такое
 
-The core idea is simple:
+Базовая идея проста:
 
-- XAML is a good authoring format for humans.
-- A visual designer needs a structured model, not a text language.
-- `.arxui` is that structured persistence format.
-- The source generator compiles the model into `InitializeComponent()`.
-- The editor can inspect and manipulate the same model without rewriting markup text.
+- XAML удобен как формат ручного написания представлений.
+- Визуальному конструктору нужна структурированная модель, а не текстовый язык.
+- `.arxui` и есть такой persistence format.
+- Source generator компилирует эту модель в `InitializeComponent()`.
+- Редактор может инспектировать и изменять ту же самую модель, не переписывая текст разметки.
 
-This makes the project suitable for:
+Из-за этого проект подходит для:
 
-- visual form and screen designers
-- property inspectors
-- drag-and-drop layout tooling
-- model transforms and refactoring
-- round-trip serialization
-- build-time generation of Avalonia UI code
+- визуальных конструкторов форм и экранов
+- инспектора свойств
+- drag-and-drop компоновки
+- трансформаций модели
+- round-trip сериализации
+- build-time генерации Avalonia UI кода
 
-## Main Property
+## Главное Свойство
 
-The most important architectural property of the library is that it does not need built-in knowledge about a fixed catalog of controls.
+Самое важное архитектурное свойство библиотеки в том, что ей не нужно встроенное знание о фиксированном каталоге контролов.
 
-It works from type metadata:
+Она работает от метаданных типов:
 
-- `.arxui` stores CLR type names and structured property values
-- the generator resolves types and members through Roslyn
-- the editor resolves and previews the model at runtime
+- `.arxui` хранит CLR-имена типов и структурированные значения свойств
+- generator разрешает типы и члены через Roslyn
+- editor разрешает и preview'ит модель в runtime
 
-This means the library can work with:
+Это означает, что библиотека может работать с:
 
-- standard Avalonia controls
-- custom controls from the user project
-- controls from referenced libraries
-- project-specific resources and style files
+- стандартными контролами Avalonia
+- пользовательскими контролами из проекта
+- контролами из внешних библиотек
+- проектными ресурсами и style-файлами
 
-without adding hardcoded support for every new type.
+без необходимости добавлять отдельную поддержку под каждый новый тип.
 
-## Repository Layout
+## Структура Репозитория
 
 - `ArxisStudio.Contracts`
-  Contracts and JSON serialization for the `.arxui` model.
+  Контракты и JSON-сериализация модели `.arxui`.
 
 - `ArxisStudio.Generator/ArxisStudio.Generator`
-  Incremental Roslyn source generator that reads `.arxui` from `AdditionalFiles`, validates documents, resolves types and properties, and generates `InitializeComponent()` implementations.
+  Инкрементальный Roslyn source generator, который читает `.arxui` из `AdditionalFiles`, валидирует документы, разрешает типы и свойства и генерирует `InitializeComponent()`.
 
 - `ArxisStudio.Editor`
-  Experimental visual editor and previewer. It edits `.arxui`, loads project context, and renders a design-time preview without executing user event code.
+  Экспериментальный визуальный редактор и previewer. Он редактирует `.arxui`, загружает контекст проекта и строит design-time preview без выполнения пользовательского event code.
 
 - `ArxisStudio.Sample`
-  Sample Avalonia application using the generator.
+  Пример Avalonia-приложения, использующего generator.
 
 - `ArxisStudio.Template`
-  Template Avalonia project intended to be opened inside `ArxisStudio.Editor`.
+  Шаблонный Avalonia-проект, предназначенный для открытия в `ArxisStudio.Editor`.
 
 - `ArxisStudio.Tests`
-  Generator and serializer tests.
+  Тесты generator и serializer.
 
-## Supported Document Kinds
+## Поддерживаемые Виды Документов
 
-The model currently supports:
+Сейчас модель поддерживает:
 
 - `Application`
 - `Control`
@@ -72,66 +72,66 @@ The model currently supports:
 - `Styles`
 - `ResourceDictionary`
 
-`Kind` defines the semantic category of the document. The concrete CLR root type is still declared through `Root.TypeName`.
+`Kind` задаёт семантическую категорию документа. Конкретный CLR root type по-прежнему задаётся через `Root.TypeName`.
 
-## `.arxui` Model Features
+## Возможности Модели `.arxui`
 
-Current model support includes:
+Текущая модель умеет:
 
-- object creation by CLR type name
-- nested object graphs
-- scalar properties
-- collection properties such as `Children`
-- attached properties such as `Grid.Row` or `Canvas.Left`
-- resources via `$resource`
-- bindings via `$binding`
-- asset loading via `$asset`
-- host-level `Styles` and `Resources`
-- `StyleInclude`
-- merged resource dictionaries
-- local keyed resources on root and nested nodes
+- создавать объекты по CLR-имени типа
+- описывать вложенные графы объектов
+- присваивать scalar properties
+- работать со свойствами-коллекциями, например `Children`
+- задавать attached properties, например `Grid.Row` или `Canvas.Left`
+- использовать ресурсы через `$resource`
+- использовать bindings через `$binding`
+- загружать ассеты через `$asset`
+- задавать host-level `Styles` и `Resources`
+- подключать `StyleInclude`
+- подключать merged resource dictionaries
+- хранить локальные keyed resources у root и вложенных узлов
 
-This now covers:
+Этого уже достаточно для:
 
-- `Application`-level styling
-- `Window` and `UserControl` trees
-- local resources inside the visual tree
-- hybrid scenarios where styles stay in `.axaml` and layout stays in `.arxui`
+- `Application`-уровневого styling
+- `Window` и `UserControl` деревьев
+- локальных ресурсов внутри визуального дерева
+- гибридного сценария, где стили живут в `.axaml`, а layout в `.arxui`
 
-## What The Project Is Not
+## Чем Проект Не Является
 
-This is not a complete XAML implementation.
+Это не полная реализация XAML.
 
-It intentionally does not try to mirror the whole Avalonia XAML language:
+Проект намеренно не пытается повторить весь язык Avalonia XAML:
 
-- no full markup extension system
-- no full template/style/animation parity
-- no XAML namespace/prefix authoring model
-- no attempt to be a drop-in replacement for the Avalonia XAML compiler
+- нет полной системы markup extensions
+- нет полного покрытия template/style/animation
+- нет полноценной authoring-модели с XAML namespace/prefix
+- нет цели стать drop-in replacement для Avalonia XAML compiler
 
-That tradeoff is intentional. The model is designed for tooling first.
+Этот компромисс сделан осознанно. Модель проектируется в первую очередь для инструментов.
 
-## How Build-Time Generation Works
+## Как Работает Build-Time Генерация
 
-The usual workflow is:
+Обычный workflow такой:
 
-1. Declare a normal Avalonia `partial` class.
-2. Create a matching `.arxui` file.
-3. Set `Class` to the full CLR name of the target type.
-4. Add `.arxui` files to the consuming project as `AdditionalFiles`.
-5. The generator validates the document and emits `InitializeComponent()`.
+1. Объявляется обычный Avalonia `partial` class.
+2. Создаётся соответствующий `.arxui` файл.
+3. В `Class` указывается полное CLR-имя целевого типа.
+4. `.arxui` добавляется в consuming project как `AdditionalFiles`.
+5. Generator валидирует документ и генерирует `InitializeComponent()`.
 
-The generator checks:
+Generator проверяет:
 
-- whether the document parses
-- whether the root type exists
-- whether `Kind` matches the root type
-- whether `Class` exists when required
-- whether the target type is `partial`
-- whether the target type matches the document root
-- whether duplicate assets target the same CLR type
+- парсится ли документ
+- существует ли root type
+- совместим ли `Kind` с root type
+- существует ли `Class`, когда он обязателен
+- является ли target type `partial`
+- совместим ли target type с root type документа
+- нет ли нескольких assets, указывающих на один и тот же CLR type
 
-## Example
+## Пример
 
 `partial` class:
 
@@ -145,7 +145,7 @@ public partial class SolidColorBrush : ContentControl
 }
 ```
 
-Matching `.arxui`:
+Соответствующий `.arxui`:
 
 ```json
 {
@@ -170,100 +170,100 @@ Matching `.arxui`:
 }
 ```
 
-At build time the generator turns this into C# that creates the visual tree and assigns properties in `InitializeComponent()`.
+Во время сборки generator превращает это описание в C#-код, который создаёт дерево контролов и присваивает свойства внутри `InitializeComponent()`.
 
-## Application-Level Documents
+## Документы Уровня Application
 
-The library now supports `Application` documents as well.
+Библиотека теперь поддерживает и `Application`-документы.
 
-That means `App.axaml` can be replaced by `.arxui` in supported scenarios. The template project demonstrates this with:
+Это означает, что в поддерживаемых сценариях `App.axaml` можно заменить на `.arxui`. Шаблонный проект показывает это на практике:
 
 - [App.arxui](/home/deck/Desktop/SourceGenerationExample/ArxisStudio.Template/Metadata/App.arxui)
 - [App.arxui.cs](/home/deck/Desktop/SourceGenerationExample/ArxisStudio.Template/App.arxui.cs)
 
-This makes it possible to model:
+Это позволяет моделировать через `.arxui`:
 
 - application-level theme setup
 - application-level styles
 - application-level merged dictionaries
 
-using the same persistence format as the rest of the designer pipeline.
+используя тот же persistence format, что и для остальных частей конструктора.
 
-## Hybrid Styling Strategy
+## Гибридная Стратегия Для Стилей
 
-The intended styling strategy is hybrid:
+Рекомендуемая стратегия для styling здесь гибридная:
 
-- `.arxui` owns the structural UI model
-- `.axaml` remains a good place for human-authored styles and resource dictionaries
-- `.arxui` references those files through `StyleInclude` and merged dictionaries
+- `.arxui` владеет структурной UI-моделью
+- `.axaml` остаётся хорошим местом для человекочитаемых стилей и resource dictionaries
+- `.arxui` ссылается на эти файлы через `StyleInclude` и merged dictionaries
 
-This avoids turning styles into an uncomfortable JSON authoring experience while still making them visible to tooling.
+Это позволяет не превращать стили в неудобный JSON authoring experience, но при этом делать их видимыми для инструментов.
 
-## Editor Model
+## Модель Работы Editor
 
-`ArxisStudio.Editor` is a design-time tool, not an application runner.
+`ArxisStudio.Editor` это design-time tool, а не runner пользовательского приложения.
 
-The intended design rule is:
+Базовое правило такое:
 
-- use the project as a source of types, resources, and style files
-- do not execute user event handlers or application logic
+- проект используется как источник типов, ресурсов и style-файлов
+- пользовательский event code и runtime logic выполняться не должны
 
-The editor currently:
+Сейчас editor умеет:
 
-- loads `.csproj` or `.sln`
-- indexes `.arxui` and `.axaml` files
-- opens `.arxui` files directly from project context
-- writes changes back to the opened `.arxui`
-- applies local resources and styles during preview
-- loads external `.axaml` style/resource files for preview
+- открывать `.csproj` или `.sln`
+- индексировать `.arxui` и `.axaml` файлы
+- открывать `.arxui` прямо из контекста проекта
+- записывать изменения обратно в открытый `.arxui`
+- применять локальные ресурсы и стили в preview
+- загружать внешние `.axaml` style/resource файлы для preview
 
-The editor currently does not aim for full runtime parity yet:
+При этом editor пока ещё не претендует на полное runtime parity:
 
-- preview is still partial
-- project assembly loading is not yet fully isolated
-- custom runtime logic must not be executed
+- preview всё ещё частичный
+- загрузка project assemblies пока не полностью изолирована
+- пользовательская runtime-логика не должна исполняться
 
-## Live Preview Roadmap
+## Дорожная Карта Live Preview
 
-The target workflow is:
+Целевой workflow выглядит так:
 
-1. Open `.sln` or `.csproj`
-2. Discover project types, resources, `.arxui`, and `.axaml`
-3. Double-click an `.arxui` document
-4. See a design-time preview close to the real Avalonia result
+1. Открывается `.sln` или `.csproj`
+2. Обнаруживаются типы проекта, ресурсы, `.arxui` и `.axaml`
+3. Пользователь дважды кликает по `.arxui`
+4. В дизайнере появляется preview, максимально близкий к реальному Avalonia-результату
 
-Remaining steps to reach that state:
+Чтобы дойти до этого состояния, остаются следующие шаги:
 
-1. Complete project-context handling in the editor
-2. Add assembly-based type resolution for custom project types
-3. Improve preview parity for resources, styles, templates, and bindings
-4. Keep preview safe by avoiding user runtime logic
-5. Add diagnostics and incremental refresh
+1. Завершить работу с проектным контекстом в editor
+2. Добавить assembly-based type resolution для пользовательских project types
+3. Подтянуть parity preview для ресурсов, стилей, шаблонов и bindings
+4. Сохранить safe-preview модель без выполнения пользовательской runtime-логики
+5. Добавить диагностику и incremental refresh
 
-## Template Project
+## Шаблонный Проект
 
-`ArxisStudio.Template` exists specifically to test editor workflows.
+`ArxisStudio.Template` существует специально для проверки editor workflow.
 
-It includes:
+Он включает:
 
 - `.arxui` layout documents
-- external `.axaml` styles
-- external `.axaml` resource dictionaries
-- an `Application` document in `.arxui`
+- внешние `.axaml` styles
+- внешние `.axaml` resource dictionaries
+- `Application` document в формате `.arxui`
 
-That project is the current reference case for:
+Сейчас именно этот проект является основным reference case для:
 
-- project loading in the editor
+- project loading в editor
 - style/resource-aware preview
-- source generation over multiple document kinds
+- source generation сразу по нескольким document kinds
 
-## Build And Run
+## Сборка И Запуск
 
-Requirements:
+Требования:
 
 - .NET SDK 9.0
 
-Commands:
+Команды:
 
 ```bash
 dotnet build ArxisStudio.Markup.sln
@@ -273,20 +273,20 @@ dotnet run --project ArxisStudio.Editor/ArxisStudio.Markup.Json.Loader.csproj
 dotnet run --project ArxisStudio.Template/ArxisStudio.Markup.Template.csproj
 ```
 
-## Current Status
+## Текущее Состояние
 
-- the solution builds successfully
-- generator tests pass
-- build-time generation supports `Application`, `Control`, `Window`, `Styles`, and `ResourceDictionary`
-- generator supports host-level `Styles` and `Resources`
-- generator supports `StyleInclude` and merged resource dictionaries
-- `ArxisStudio.Sample` contains working `.arxui` examples
-- `ArxisStudio.Template` uses `.arxui` for both `Application` and screen UI
-- `ArxisStudio.Editor` can load project context and open `.arxui` files from the project
-- editor preview now applies local styles and resources, but still does not have full build/runtime parity
+- solution успешно собирается
+- generator tests проходят
+- build-time generation поддерживает `Application`, `Control`, `Window`, `Styles` и `ResourceDictionary`
+- generator поддерживает host-level `Styles` и `Resources`
+- generator поддерживает `StyleInclude` и merged resource dictionaries
+- в `ArxisStudio.Sample` есть рабочие `.arxui`-примеры
+- `ArxisStudio.Template` использует `.arxui` и для `Application`, и для screen UI
+- `ArxisStudio.Editor` умеет загружать проектовый контекст и открывать `.arxui` из проекта
+- editor preview уже применяет локальные стили и ресурсы, но пока ещё не имеет полного build/runtime parity
 
-## Notes
+## Замечания
 
-- `Class` is required for build-time generation of `Application`, `Control`, and `Window` documents.
-- `SchemaVersion: 1` should still be treated as an internal evolving contract.
-- The editor should be understood as an active prototype, not a finished IDE-grade designer.
+- `Class` обязателен для build-time генерации `Application`, `Control` и `Window` документов.
+- `SchemaVersion: 1` пока всё ещё следует рассматривать как внутренний evolving contract.
+- `ArxisStudio.Editor` пока следует понимать как активный прототип, а не как finished IDE-grade designer.
