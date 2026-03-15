@@ -10,9 +10,9 @@ namespace System.Runtime.CompilerServices
 
 namespace ArxisStudio.Markup.Json.Generator.Utility
 {
-    public static class LinqExtensions
+    internal static class LinqExtensions
     {
-        public static IEnumerable<TSource> DistinctBy<TSource, TKey>(
+        internal static IEnumerable<TSource> DistinctBy<TSource, TKey>(
             this IEnumerable<TSource> source, 
             Func<TSource, TKey> keySelector)
         {

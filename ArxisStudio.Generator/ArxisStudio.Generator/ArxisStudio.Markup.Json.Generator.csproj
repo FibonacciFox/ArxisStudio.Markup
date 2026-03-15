@@ -11,6 +11,7 @@
 
     <RootNamespace>ArxisStudio.Markup.Json.Generator</RootNamespace>
     <PackageId>ArxisStudio.Markup.Json.Generator</PackageId>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
 </PropertyGroup>
 
     

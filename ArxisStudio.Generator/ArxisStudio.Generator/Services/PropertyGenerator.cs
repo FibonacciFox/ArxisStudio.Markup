@@ -7,7 +7,7 @@ using Microsoft.CodeAnalysis;
 
 namespace ArxisStudio.Markup.Json.Generator.Services
 {
-    public class PropertyGenerator
+    internal class PropertyGenerator
     {
         private readonly TypeResolver _resolver;
         private readonly ValueFormatter _formatter;
@@ -15,7 +15,7 @@ namespace ArxisStudio.Markup.Json.Generator.Services
         private readonly string _assemblyName;
         private readonly string _fileName;
 
-        public PropertyGenerator(
+        internal PropertyGenerator(
             TypeResolver resolver, 
             ValueFormatter formatter, 
             SourceProductionContext context, 
@@ -29,7 +29,7 @@ namespace ArxisStudio.Markup.Json.Generator.Services
             _fileName = fileName;
         }
 
-        public void GeneratePropertyAssignment(IndentedTextWriter writer,
+        internal void GeneratePropertyAssignment(IndentedTextWriter writer,
             string targetName,
             INamedTypeSymbol? targetTypeSymbol,
             string propertyName,
@@ -219,7 +219,7 @@ namespace ArxisStudio.Markup.Json.Generator.Services
             }
         }
 
-        public void GenerateHostResources(IndentedTextWriter writer, string targetName, UiResources? resources)
+        internal void GenerateHostResources(IndentedTextWriter writer, string targetName, UiResources? resources)
         {
             if (resources == null)
             {
@@ -243,7 +243,7 @@ namespace ArxisStudio.Markup.Json.Generator.Services
             }
         }
 
-        public void GenerateHostStyles(IndentedTextWriter writer, string targetName, UiStyles? styles)
+        internal void GenerateHostStyles(IndentedTextWriter writer, string targetName, UiStyles? styles)
         {
             if (styles == null)
             {

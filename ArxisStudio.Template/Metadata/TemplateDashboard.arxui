@@ -400,7 +400,7 @@
   },
   "Class": "ArxisStudio.Markup.Template.Forms.TemplateDashboard",
   "$design": {
-    "SurfaceWidth": 600.0,
-    "SurfaceHeight": 800.0
+    "SurfaceWidth": 800.0,
+    "SurfaceHeight": 600.0
   }
 }

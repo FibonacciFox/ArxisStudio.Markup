@@ -5,16 +5,29 @@ using Newtonsoft.Json.Linq;
 
 namespace ArxisStudio.Markup.Json;
 
+/// <summary>
+/// Выполняет сериализацию и десериализацию документов <c>.arxui</c>.
+/// </summary>
 public static class ArxuiSerializer
 {
     private const int CurrentSchemaVersion = 1;
 
+    /// <summary>
+    /// Десериализует JSON-строку в модель <see cref="UiDocument"/>.
+    /// </summary>
+    /// <param name="json">Исходный JSON-документ.</param>
+    /// <returns>Десериализованный документ или <see langword="null"/>, если документ не содержит корневого узла.</returns>
     public static UiDocument? Deserialize(string json)
     {
         var root = JObject.Parse(json);
         return Deserialize(root);
     }
 
+    /// <summary>
+    /// Десериализует <see cref="JObject"/> в модель <see cref="UiDocument"/>.
+    /// </summary>
+    /// <param name="root">Корневой JSON-объект документа.</param>
+    /// <returns>Десериализованный документ или <see langword="null"/>, если документ не содержит корневого узла.</returns>
     public static UiDocument? Deserialize(JObject root)
     {
         var kindToken = root["Kind"] ?? root["AssetType"];
@@ -51,6 +64,11 @@ public static class ArxuiSerializer
         return new UiDocument(schemaVersion, kind, className, rootNode, ReadDocumentDesign(root["$design"] as JObject));
     }
 
+    /// <summary>
+    /// Сериализует документ в JSON-строку.
+    /// </summary>
+    /// <param name="document">Документ для сериализации.</param>
+    /// <returns>JSON-представление документа в формате <c>.arxui</c>.</returns>
     public static string Serialize(UiDocument document)
     {
         var root = new JObject

@@ -6,16 +6,16 @@ using Newtonsoft.Json.Linq;
 
 namespace ArxisStudio.Markup.Json.Generator.Services
 {
-    public class ValueFormatter
+    internal class ValueFormatter
     {
         private readonly TypeResolver _resolver;
 
-        public ValueFormatter(TypeResolver resolver)
+        internal ValueFormatter(TypeResolver resolver)
         {
             _resolver = resolver;
         }
 
-        public string Format(object element, ITypeSymbol? targetType)
+        internal string Format(object element, ITypeSymbol? targetType)
         {
             if (targetType is null || element is null)
                 return FormatLegacy(element);

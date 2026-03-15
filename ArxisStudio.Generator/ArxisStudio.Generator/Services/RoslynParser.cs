@@ -2,13 +2,13 @@
 
 namespace ArxisStudio.Markup.Json.Generator.Services
 {
-    public class ClassInfo
+    internal class ClassInfo
     {
-        public string ClassName { get; }
-        public string Namespace { get; }
-        public string? BaseClass { get; }
+        internal string ClassName { get; }
+        internal string Namespace { get; }
+        internal string? BaseClass { get; }
 
-        public ClassInfo(string className, string ns, string? baseClass)
+        internal ClassInfo(string className, string ns, string? baseClass)
         {
             ClassName = className;
             Namespace = ns;
@@ -16,9 +16,9 @@ namespace ArxisStudio.Markup.Json.Generator.Services
         }
     }
 
-    public static class RoslynParser
+    internal static class RoslynParser
     {
-        public static ClassInfo ParseClassInfo(INamedTypeSymbol typeSymbol)
+        internal static ClassInfo ParseClassInfo(INamedTypeSymbol typeSymbol)
         {
             var className = typeSymbol.Name;
             var containingNamespace = typeSymbol.ContainingNamespace;

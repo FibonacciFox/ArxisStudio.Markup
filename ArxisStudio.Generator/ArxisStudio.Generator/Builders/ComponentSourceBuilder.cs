@@ -10,20 +10,20 @@ using Microsoft.CodeAnalysis;
 
 namespace ArxisStudio.Markup.Json.Generator.Builders
 {
-    public class ComponentSourceBuilder
+    internal class ComponentSourceBuilder
     {
         private readonly TypeResolver _resolver;
         private readonly ValueFormatter _formatter;
         private readonly SourceProductionContext _context;
 
-        public ComponentSourceBuilder(TypeResolver resolver, SourceProductionContext context)
+        internal ComponentSourceBuilder(TypeResolver resolver, SourceProductionContext context)
         {
             _resolver = resolver;
             _formatter = new ValueFormatter(resolver);
             _context = context;
         }
 
-        public string Build(UiDocument document, ClassInfo classInfo, string assemblyName, string fileName)
+        internal string Build(UiDocument document, ClassInfo classInfo, string assemblyName, string fileName)
         {
             using var stringWriter = new StringWriter();
             using var writer = new IndentedTextWriter(stringWriter, "    ");

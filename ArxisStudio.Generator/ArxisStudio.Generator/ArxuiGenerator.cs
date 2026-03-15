@@ -13,9 +13,17 @@ using Microsoft.CodeAnalysis.Text;
 
 namespace ArxisStudio.Markup.Json.Generator
 {
+    /// <summary>
+    /// Инкрементальный Roslyn generator, компилирующий документы <c>.arxui</c> в код
+    /// метода <c>InitializeComponent()</c>.
+    /// </summary>
     [Generator(LanguageNames.CSharp)]
     public class ArxuiGenerator : IIncrementalGenerator
     {
+        /// <summary>
+        /// Регистрирует pipeline обработки <c>.arxui</c> файлов.
+        /// </summary>
+        /// <param name="context">Контекст инициализации incremental generator.</param>
         public void Initialize(IncrementalGeneratorInitializationContext context)
         {
             var assetsPipeline = context.AdditionalTextsProvider

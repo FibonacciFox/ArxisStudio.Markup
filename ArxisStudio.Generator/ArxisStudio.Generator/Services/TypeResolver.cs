@@ -3,19 +3,19 @@ using Microsoft.CodeAnalysis;
 
 namespace ArxisStudio.Markup.Json.Generator.Services
 {
-    public class TypeResolver
+    internal class TypeResolver
     {
         private readonly Compilation _compilation;
 
-        public TypeResolver(Compilation compilation)
+        internal TypeResolver(Compilation compilation)
         {
             _compilation = compilation;
         }
 
-        public INamedTypeSymbol? ResolveType(string metadataName) 
+        internal INamedTypeSymbol? ResolveType(string metadataName) 
             => _compilation.GetTypeByMetadataName(metadataName);
 
-        public IPropertySymbol? FindProperty(INamedTypeSymbol type, string propertyName)
+        internal IPropertySymbol? FindProperty(INamedTypeSymbol type, string propertyName)
         {
             for (var t = type; t is not null; t = t.BaseType)
             {
@@ -24,7 +24,7 @@ namespace ArxisStudio.Markup.Json.Generator.Services
             return null;
         }
 
-        public IEventSymbol? FindEvent(INamedTypeSymbol type, string eventName)
+        internal IEventSymbol? FindEvent(INamedTypeSymbol type, string eventName)
         {
             for (var t = type; t is not null; t = t.BaseType)
             {
@@ -33,7 +33,7 @@ namespace ArxisStudio.Markup.Json.Generator.Services
             return null;
         }
 
-        public IFieldSymbol? FindAvaloniaPropertyField(INamedTypeSymbol type, string propertyName)
+        internal IFieldSymbol? FindAvaloniaPropertyField(INamedTypeSymbol type, string propertyName)
         {
             string fieldName = propertyName + "Property";
             for (var t = type; t is not null; t = t.BaseType)
@@ -44,7 +44,7 @@ namespace ArxisStudio.Markup.Json.Generator.Services
             return null;
         }
 
-        public IMethodSymbol? FindAttachedSetter(INamedTypeSymbol ownerType, string attachedName)
+        internal IMethodSymbol? FindAttachedSetter(INamedTypeSymbol ownerType, string attachedName)
         {
             string methodName = "Set" + attachedName;
             foreach (var member in ownerType.GetMembers(methodName))
@@ -55,7 +55,7 @@ namespace ArxisStudio.Markup.Json.Generator.Services
             return null;
         }
 
-        public bool IsAssignableTo(ITypeSymbol type, string baseTypeName)
+        internal bool IsAssignableTo(ITypeSymbol type, string baseTypeName)
         {
             var baseType = _compilation.GetTypeByMetadataName(baseTypeName);
             if (baseType == null) return false;
@@ -76,7 +76,7 @@ namespace ArxisStudio.Markup.Json.Generator.Services
             return false;
         }
 
-        public bool IsCollectionType(ITypeSymbol type)
+        internal bool IsCollectionType(ITypeSymbol type)
         {
             if (type is IArrayTypeSymbol) return true;
 
