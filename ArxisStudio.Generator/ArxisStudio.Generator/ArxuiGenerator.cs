@@ -194,13 +194,14 @@ namespace ArxisStudio.Markup.Json.Generator
 
         private static bool RequiresTargetClass(UiDocumentKind kind)
         {
-            return kind is UiDocumentKind.Control or UiDocumentKind.Window;
+            return kind is UiDocumentKind.Application or UiDocumentKind.Control or UiDocumentKind.Window;
         }
 
         private static bool IsDocumentKindCompatible(UiDocumentKind kind, INamedTypeSymbol targetType, TypeResolver typeResolver)
         {
             return kind switch
             {
+                UiDocumentKind.Application => typeResolver.IsAssignableTo(targetType, "Avalonia.Application"),
                 UiDocumentKind.Window => typeResolver.IsAssignableTo(targetType, "Avalonia.Controls.Window"),
                 UiDocumentKind.Control => typeResolver.IsAssignableTo(targetType, "Avalonia.Controls.Control"),
                 UiDocumentKind.Styles => typeResolver.IsAssignableTo(targetType, "Avalonia.Styling.Styles"),

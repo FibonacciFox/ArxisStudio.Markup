@@ -4,6 +4,7 @@ using CommunityToolkit.Mvvm.Input;
 using Avalonia.Controls;
 using ArxisStudio.Markup.Json.Loader.Services;
 using System;
+using System.IO;
 using System.Linq;
 using Newtonsoft.Json.Linq;
 using System.Collections.ObjectModel;
@@ -13,7 +14,9 @@ namespace ArxisStudio.Markup.Json.Loader.ViewModels
 {
     public partial class MainWindowViewModel : ObservableObject
     {
+        private readonly ProjectDiscoveryService _projectDiscoveryService = new();
         private bool _suppressJsonTextChanged;
+        private string? _currentDocumentPath;
 
         [ObservableProperty]
         private string _jsonText = "";
@@ -34,6 +37,20 @@ namespace ArxisStudio.Markup.Json.Loader.ViewModels
         
         [ObservableProperty]
         private ObservableCollection<PropertyItem> _editableProperties = new();
+
+        [ObservableProperty]
+        private string _projectPathInput = "";
+
+        [ObservableProperty]
+        private string _projectSummary = "No project loaded.";
+
+        [ObservableProperty]
+        private ProjectContext? _loadedProject;
+
+        [ObservableProperty]
+        private ProjectFileItem? _selectedProjectFile;
+
+        public ObservableCollection<ProjectFileItem> ProjectArxuiFiles { get; } = new();
 
         // Коллекция доступных контролов (для Toolbox)
         public ObservableCollection<JObject> AvailableControls { get; } = new()
@@ -84,6 +101,7 @@ namespace ArxisStudio.Markup.Json.Loader.ViewModels
 
         public MainWindowViewModel()
         {
+            ProjectPathInput = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "ArxisStudio.Template", "ArxisStudio.Markup.Template.csproj"));
             JsonText = @"{
   ""SchemaVersion"": 1,
   ""Kind"": ""Control"",
@@ -152,6 +170,11 @@ namespace ArxisStudio.Markup.Json.Loader.ViewModels
             // Явно оповещаем команду об изменении SelectedNode
             DeleteSelectedControlCommand.NotifyCanExecuteChanged(); 
         }
+
+        partial void OnSelectedProjectFileChanged(ProjectFileItem? oldValue, ProjectFileItem? newValue)
+        {
+            OpenSelectedProjectFileCommand.NotifyCanExecuteChanged();
+        }
         
         // --- Основная логика синхронизации и исправления ошибки ---
 
@@ -193,6 +216,10 @@ namespace ArxisStudio.Markup.Json.Loader.ViewModels
                 try
                 {
                     JsonText = ArxuiSerializer.Serialize(rootModel);
+                    if (!string.IsNullOrWhiteSpace(_currentDocumentPath))
+                    {
+                        File.WriteAllText(_currentDocumentPath!, JsonText);
+                    }
                 }
                 finally
                 {
@@ -200,20 +227,7 @@ namespace ArxisStudio.Markup.Json.Loader.ViewModels
                 }
 
                 // 3. Строим UI (Рендеринг)
-                if (rootModel.Root.Properties.TryGetValue("Content", out var contentValue) &&
-                    contentValue is NodeValue contentNode)
-                {
-                    var builtControl = UiBuilder.Build(contentNode.Node);
-
-                    // Обертывание в корневой контейнер
-                    var rootContainer = new Border
-                    {
-                        Width = GetScalarDouble(rootModel.Root.Properties, "Width"),
-                        Height = GetScalarDouble(rootModel.Root.Properties, "Height"),
-                        Child = builtControl
-                    };
-                    RenderedContent = rootContainer;
-                }
+                RenderedContent = UiBuilder.Build(rootModel.Root, LoadedProject);
                 
                 if (!rebuildTree)
                 {
@@ -244,20 +258,6 @@ namespace ArxisStudio.Markup.Json.Loader.ViewModels
             {
                 ErrorMessage = $"Rendering Error: {ex.Message}";
             }
-        }
-
-        private static double GetScalarDouble(
-            System.Collections.Generic.IReadOnlyDictionary<string, UiValue> properties,
-            string propertyName)
-        {
-            if (!properties.TryGetValue(propertyName, out var property) ||
-                property is not ScalarValue scalar ||
-                scalar.Value == null)
-            {
-                return double.NaN;
-            }
-
-            return Convert.ToDouble(scalar.Value);
         }
 
         // Вспомогательный метод: ищет узел в дереве по ссылке на исходный JObject
@@ -307,6 +307,72 @@ namespace ArxisStudio.Markup.Json.Loader.ViewModels
         }
         
         // --- Команды конструктора ---
+
+        [RelayCommand]
+        private void LoadProject()
+        {
+            try
+            {
+                ErrorMessage = "";
+                var project = _projectDiscoveryService.Load(ProjectPathInput);
+                LoadedProject = project;
+
+                ProjectArxuiFiles.Clear();
+                foreach (var file in project.ArxuiFiles)
+                {
+                    ProjectArxuiFiles.Add(file);
+                }
+
+                ProjectSummary =
+                    $"Project: {Path.GetFileName(project.ProjectPath)} | Assembly: {project.AssemblyName} | TFM: {project.TargetFramework} | .arxui: {project.ArxuiFiles.Count} | .axaml: {project.AxamlFiles.Count}";
+
+                if (ProjectArxuiFiles.Count > 0)
+                {
+                    SelectedProjectFile = ProjectArxuiFiles[0];
+                    OpenProjectFile(ProjectArxuiFiles[0]);
+                }
+            }
+            catch (Exception ex)
+            {
+                ErrorMessage = $"Project Load Error: {ex.Message}";
+            }
+        }
+
+        [RelayCommand(CanExecute = nameof(CanOpenSelectedProjectFile))]
+        private void OpenSelectedProjectFile()
+        {
+            if (SelectedProjectFile != null)
+            {
+                OpenProjectFile(SelectedProjectFile);
+            }
+        }
+
+        private void OpenProjectFile(ProjectFileItem file)
+        {
+            try
+            {
+                ErrorMessage = "";
+                _currentDocumentPath = file.FullPath;
+
+                _suppressJsonTextChanged = true;
+                try
+                {
+                    JsonText = File.ReadAllText(file.FullPath);
+                }
+                finally
+                {
+                    _suppressJsonTextChanged = false;
+                }
+
+                UpdateTreeAndUIFromText();
+            }
+            catch (Exception ex)
+            {
+                ErrorMessage = $"Open File Error: {ex.Message}";
+            }
+        }
+
+        public bool CanOpenSelectedProjectFile => SelectedProjectFile != null;
 
         [RelayCommand]
         private void AddNewControl(JObject? controlTemplate)

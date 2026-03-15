@@ -5,129 +5,331 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:j="using:Newtonsoft.Json.Linq"
-        mc:Ignorable="d" d:DesignWidth="1400" d:DesignHeight="800"
+        mc:Ignorable="d" d:DesignWidth="1580" d:DesignHeight="920"
         x:Class="ArxisStudio.Markup.Json.Loader.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
         Icon="/Assets/avalonia-logo.ico"
-        Title="JSON UI Designer"
-        MinHeight="600" MinWidth="1000">
+        Title="ArxisStudio Editor"
+        MinHeight="720"
+        MinWidth="1280"
+        Background="#0E1318">
+
+    <Window.Resources>
+        <SolidColorBrush x:Key="PageBackgroundBrush">#0E1318</SolidColorBrush>
+        <SolidColorBrush x:Key="SurfaceBrush">#151C24</SolidColorBrush>
+        <SolidColorBrush x:Key="SurfaceRaisedBrush">#1B242E</SolidColorBrush>
+        <SolidColorBrush x:Key="SurfaceMutedBrush">#111820</SolidColorBrush>
+        <SolidColorBrush x:Key="StrokeBrush">#273240</SolidColorBrush>
+        <SolidColorBrush x:Key="StrokeStrongBrush">#3D536A</SolidColorBrush>
+        <SolidColorBrush x:Key="AccentBrush">#6EC6FF</SolidColorBrush>
+        <SolidColorBrush x:Key="AccentSoftBrush">#17344B</SolidColorBrush>
+        <SolidColorBrush x:Key="DangerBrush">#FF6B6B</SolidColorBrush>
+        <SolidColorBrush x:Key="TextPrimaryBrush">#EAF2F8</SolidColorBrush>
+        <SolidColorBrush x:Key="TextSecondaryBrush">#96A7B8</SolidColorBrush>
+    </Window.Resources>
+
+    <Window.Styles>
+        <Style Selector="Border.panel">
+            <Setter Property="Background" Value="{StaticResource SurfaceBrush}" />
+            <Setter Property="BorderBrush" Value="{StaticResource StrokeBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Padding" Value="12" />
+        </Style>
+
+        <Style Selector="Border.panel.raised">
+            <Setter Property="Background" Value="{StaticResource SurfaceRaisedBrush}" />
+            <Setter Property="BorderBrush" Value="{StaticResource StrokeStrongBrush}" />
+        </Style>
+
+        <Style Selector="TextBlock.section-title">
+            <Setter Property="FontSize" Value="15" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}" />
+        </Style>
+
+        <Style Selector="TextBlock.panel-kicker">
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="Foreground" Value="{StaticResource AccentBrush}" />
+            <Setter Property="LetterSpacing" Value="0.8" />
+        </Style>
+
+        <Style Selector="TextBlock.helper">
+            <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}" />
+            <Setter Property="FontSize" Value="12" />
+        </Style>
+
+        <Style Selector="TextBox.editor">
+            <Setter Property="Background" Value="{StaticResource SurfaceMutedBrush}" />
+            <Setter Property="BorderBrush" Value="{StaticResource StrokeBrush}" />
+            <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}" />
+            <Setter Property="Padding" Value="8" />
+        </Style>
+
+        <Style Selector="ListBox.slim">
+            <Setter Property="Background" Value="{StaticResource SurfaceMutedBrush}" />
+            <Setter Property="BorderBrush" Value="{StaticResource StrokeBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Padding" Value="4" />
+        </Style>
+
+        <Style Selector="TreeView.slim">
+            <Setter Property="Background" Value="{StaticResource SurfaceMutedBrush}" />
+            <Setter Property="BorderBrush" Value="{StaticResource StrokeBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Padding" Value="6" />
+        </Style>
+    </Window.Styles>
 
     <Design.DataContext>
         <vm:MainWindowViewModel/>
     </Design.DataContext>
 
-    <Grid RowDefinitions="*, 80" Margin="5">
-        
-        <Grid Grid.Row="0" ColumnDefinitions="200, 5, 250, 5, 4*, 5, 250">
-            
-            <StackPanel Grid.Column="0" Orientation="Vertical">
-                <TextBlock Text="Toolbox" Margin="5,0,0,5" FontWeight="Bold"/>
-                <Border BorderBrush="#1E90FF" BorderThickness="1" Padding="5" Height="300">
-                    <ListBox ItemsSource="{Binding AvailableControls}"
-                             SelectionMode="Single"
-                             SelectionChanged="ToolboxListBox_SelectionChanged">
-                        <ListBox.ItemTemplate>
-                            <DataTemplate x:DataType="j:JObject">
-                                <TextBlock Text="{Binding [TypeName]}" 
-                                           ToolTip.Tip="Select to add to the chosen container"/>
-                            </DataTemplate>
-                        </ListBox.ItemTemplate>
-                    </ListBox>
-                </Border>
+    <Grid RowDefinitions="Auto, *, Auto" Margin="20">
+        <Border Grid.Row="0"
+                Classes="panel raised"
+                Padding="18"
+                Margin="0,0,0,16">
+            <Grid RowDefinitions="Auto, Auto" RowSpacing="14">
+                <Grid Grid.Row="0" ColumnDefinitions="*, 360">
+                    <StackPanel Spacing="4">
+                        <TextBlock Classes="panel-kicker" Text="Design Workspace" />
+                        <TextBlock Text="ArxisStudio Editor"
+                                   FontSize="30"
+                                   FontWeight="Bold"
+                                   Foreground="{StaticResource TextPrimaryBrush}" />
+                        <TextBlock Text="Open a project, inspect .arxui documents and preview the UI without running user code."
+                                   Classes="helper"
+                                   TextWrapping="Wrap"
+                                   MaxWidth="720" />
+                    </StackPanel>
 
-                <TextBlock Text="Control Tree" Margin="5,10,0,5" FontWeight="Bold"/>
-                <Border BorderBrush="LightGray" BorderThickness="1" Padding="2" VerticalAlignment="Stretch"> 
-                    <TreeView ItemsSource="{Binding ControlTreeRoot.Children}" 
-                              SelectedItem="{Binding SelectedNode, Mode=TwoWay}">
-                        <TreeView.DataTemplates>
-                            <TreeDataTemplate x:DataType="m:ControlNode" 
-                                              ItemsSource="{Binding Children}">
-                                <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="{Binding DisplayName}" Margin="3,0"/>
-                                </StackPanel>
-                            </TreeDataTemplate>
-                        </TreeView.DataTemplates>
-                    </TreeView>
-                </Border>
-            </StackPanel>
+                    <Border Grid.Column="1"
+                            Background="{StaticResource AccentSoftBrush}"
+                            BorderBrush="{StaticResource StrokeStrongBrush}"
+                            BorderThickness="1"
+                            Padding="14">
+                        <StackPanel Spacing="6">
+                            <TextBlock Classes="panel-kicker" Text="Project Summary" />
+                            <TextBlock Text="{Binding ProjectSummary}"
+                                       Foreground="{StaticResource TextPrimaryBrush}"
+                                       TextWrapping="Wrap" />
+                        </StackPanel>
+                    </Border>
+                </Grid>
 
-            <GridSplitter Grid.Column="1" Background="Gray" ResizeDirection="Columns"/>
-
-            <Grid Grid.Column="2" RowDefinitions="Auto, *, Auto">
-                <TextBlock Grid.Row="0" Text="JSON Model (Source)" Margin="5,0,0,5" FontWeight="Bold"/>
-                <TextBox Grid.Row="1"
-                         Text="{Binding JsonText}"
-                         AcceptsReturn="True"
-                         AcceptsTab="True"
-                         FontFamily="Consolas, Monospace"
-                         FontSize="12"
-                         VerticalAlignment="Stretch"/> <Button Grid.Row="2" Content="Delete Selected" 
-                        Command="{Binding DeleteSelectedControlCommand}" 
-                        Margin="0,5,0,0"
-                        HorizontalAlignment="Stretch"/>
+                <Grid Grid.Row="1" ColumnDefinitions="*, Auto, Auto" ColumnSpacing="10">
+                    <TextBox Grid.Column="0"
+                             Classes="editor"
+                             Text="{Binding ProjectPathInput, Mode=TwoWay}"
+                             Watermark="Path to .csproj or .sln"
+                             VerticalContentAlignment="Center" />
+                    <Button Grid.Column="1"
+                            Content="Load Project"
+                            Command="{Binding LoadProjectCommand}"
+                            MinWidth="120" />
+                    <Button Grid.Column="2"
+                            Content="Open Selected .arxui"
+                            Command="{Binding OpenSelectedProjectFileCommand}"
+                            MinWidth="150" />
+                </Grid>
             </Grid>
-            
-            <GridSplitter Grid.Column="3" Background="Gray" ResizeDirection="Columns"/>
+        </Border>
 
-            <Grid Grid.Column="4" RowDefinitions="Auto, *">
-                <TextBlock Grid.Row="0" Text="Rendered UI (Preview)" Margin="5,0,0,5" FontWeight="Bold"/>
-                <Border Grid.Row="1" BorderBrush="#1E90FF" 
-                        BorderThickness="3" 
-                        Padding="10" 
-                        Background="#F5F5F5"
-                        VerticalAlignment="Stretch"
-                        HorizontalAlignment="Stretch"
-                        ClipToBounds="True">
-                    <ContentControl Content="{Binding RenderedContent}" 
-                                    HorizontalContentAlignment="Stretch"
-                                    VerticalContentAlignment="Stretch"/>
+        <Grid Grid.Row="1" ColumnDefinitions="320, 420, *, 320" ColumnSpacing="14">
+            <Grid Grid.Column="0" RowDefinitions="300, *" RowSpacing="14">
+                <Border Grid.Row="0" Classes="panel">
+                    <Grid RowDefinitions="Auto, *" RowSpacing="12">
+                        <StackPanel>
+                            <TextBlock Classes="panel-kicker" Text="Project" />
+                            <TextBlock Classes="section-title" Text="Document Explorer" />
+                            <TextBlock Classes="helper"
+                                       Text="Double-click a .arxui file to load it into the designer."
+                                       TextWrapping="Wrap" />
+                        </StackPanel>
+
+                        <Grid Grid.Row="1" RowDefinitions="Auto, *" RowSpacing="10">
+                            <TextBlock Text=".arxui Files"
+                                       Foreground="{StaticResource TextSecondaryBrush}"
+                                       FontWeight="SemiBold" />
+                            <ListBox Grid.Row="1"
+                                     Classes="slim"
+                                     ItemsSource="{Binding ProjectArxuiFiles}"
+                                     SelectedItem="{Binding SelectedProjectFile, Mode=TwoWay}"
+                                     DoubleTapped="ProjectFilesListBox_DoubleTapped">
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate x:DataType="m:ProjectFileItem">
+                                        <StackPanel Margin="4,3">
+                                            <TextBlock Text="{Binding RelativePath}"
+                                                       Foreground="{StaticResource TextPrimaryBrush}" />
+                                            <TextBlock Text="{Binding Kind}"
+                                                       Classes="helper" />
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+                        </Grid>
+                    </Grid>
+                </Border>
+
+                <Border Grid.Row="1" Classes="panel">
+                    <Grid RowDefinitions="Auto, Auto, *, Auto" RowSpacing="12">
+                        <StackPanel>
+                            <TextBlock Classes="panel-kicker" Text="Structure" />
+                            <TextBlock Classes="section-title" Text="Toolbox and Control Tree" />
+                            <TextBlock Classes="helper"
+                                       Text="Add controls from the toolbox, then inspect the generated tree below."
+                                       TextWrapping="Wrap" />
+                        </StackPanel>
+
+                        <TextBlock Grid.Row="1"
+                                   Text="Toolbox"
+                                   Foreground="{StaticResource TextSecondaryBrush}"
+                                   FontWeight="SemiBold" />
+
+                        <ListBox Grid.Row="2"
+                                 Classes="slim"
+                                 ItemsSource="{Binding AvailableControls}"
+                                 SelectionMode="Single"
+                                 SelectionChanged="ToolboxListBox_SelectionChanged"
+                                 Height="190">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate x:DataType="j:JObject">
+                                    <TextBlock Text="{Binding [TypeName]}"
+                                               Margin="4"
+                                               Foreground="{StaticResource TextPrimaryBrush}"
+                                               ToolTip.Tip="Select to add to the chosen container"/>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+
+                        <Grid Grid.Row="3" RowDefinitions="Auto, *" RowSpacing="10">
+                            <TextBlock Text="Control Tree"
+                                       Foreground="{StaticResource TextSecondaryBrush}"
+                                       FontWeight="SemiBold" />
+                            <TreeView Grid.Row="1"
+                                      Classes="slim"
+                                      ItemsSource="{Binding ControlTreeRoot.Children}"
+                                      SelectedItem="{Binding SelectedNode, Mode=TwoWay}">
+                                <TreeView.DataTemplates>
+                                    <TreeDataTemplate x:DataType="m:ControlNode"
+                                                      ItemsSource="{Binding Children}">
+                                        <TextBlock Text="{Binding DisplayName}"
+                                                   Margin="4,2"
+                                                   Foreground="{StaticResource TextPrimaryBrush}" />
+                                    </TreeDataTemplate>
+                                </TreeView.DataTemplates>
+                            </TreeView>
+                        </Grid>
+                    </Grid>
                 </Border>
             </Grid>
-            
-            <GridSplitter Grid.Column="5" Background="Gray" ResizeDirection="Columns"/>
 
-            <Grid Grid.Column="6" RowDefinitions="Auto, *">
-                <TextBlock Grid.Row="0" Text="Properties" Margin="5,0,0,5" FontWeight="Bold"/>
-                <Border Grid.Row="1" BorderBrush="LightGray" BorderThickness="1" Padding="5">
-                    <ScrollViewer VerticalScrollBarVisibility="Auto" VerticalAlignment="Stretch">
+            <Border Grid.Column="1" Classes="panel">
+                <Grid RowDefinitions="Auto, *, Auto" RowSpacing="12">
+                    <StackPanel>
+                        <TextBlock Classes="panel-kicker" Text="Document" />
+                        <TextBlock Classes="section-title" Text="JSON Source" />
+                        <TextBlock Classes="helper"
+                                   Text="The designer persists changes back into the opened .arxui file."
+                                   TextWrapping="Wrap" />
+                    </StackPanel>
+
+                    <TextBox Grid.Row="1"
+                             Classes="editor"
+                             Text="{Binding JsonText}"
+                             AcceptsReturn="True"
+                             AcceptsTab="True"
+                             FontFamily="Consolas, Cascadia Code, Menlo, Monaco"
+                             FontSize="12.5"
+                             TextWrapping="NoWrap" />
+
+                    <Button Grid.Row="2"
+                            Content="Delete Selected Control"
+                            Command="{Binding DeleteSelectedControlCommand}"
+                            HorizontalAlignment="Stretch" />
+                </Grid>
+            </Border>
+
+            <Border Grid.Column="2" Classes="panel raised">
+                <Grid RowDefinitions="Auto, *" RowSpacing="12">
+                    <StackPanel>
+                        <TextBlock Classes="panel-kicker" Text="Preview" />
+                        <TextBlock Classes="section-title" Text="Rendered UI" />
+                        <TextBlock Classes="helper"
+                                   Text="Preview is built from the .arxui model and project styles/resources, without executing user event code."
+                                   TextWrapping="Wrap"
+                                   MaxWidth="640" />
+                    </StackPanel>
+
+                    <Border Grid.Row="1"
+                            Background="#E9EEF3"
+                            BorderBrush="{StaticResource StrokeStrongBrush}"
+                            BorderThickness="1"
+                            Padding="18"
+                            ClipToBounds="True">
+                        <ContentControl Content="{Binding RenderedContent}"
+                                        HorizontalContentAlignment="Stretch"
+                                        VerticalContentAlignment="Stretch" />
+                    </Border>
+                </Grid>
+            </Border>
+
+            <Border Grid.Column="3" Classes="panel">
+                <Grid RowDefinitions="Auto, *" RowSpacing="12">
+                    <StackPanel>
+                        <TextBlock Classes="panel-kicker" Text="Inspector" />
+                        <TextBlock Classes="section-title" Text="Properties" />
+                        <TextBlock Classes="helper"
+                                   Text="Edit scalar values of the currently selected node."
+                                   TextWrapping="Wrap" />
+                    </StackPanel>
+
+                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
                         <ItemsControl ItemsSource="{Binding EditableProperties}">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate x:DataType="m:PropertyItem">
-                                    <Grid ColumnDefinitions="120, *" Margin="0, 3">
-                                        <TextBlock Grid.Column="0" 
-                                                   Text="{Binding Name}" 
-                                                   FontWeight="SemiBold"
-                                                   VerticalAlignment="Center"/>
-                                        
-                                        <TextBox Grid.Column="1" 
-                                                 Text="{Binding Value, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                 Watermark="{Binding Name}"
-                                                 VerticalContentAlignment="Center"/>
-                                    </Grid>
+                                    <Border Margin="0,0,0,10"
+                                            Padding="10"
+                                            Background="{StaticResource SurfaceMutedBrush}"
+                                            BorderBrush="{StaticResource StrokeBrush}"
+                                            BorderThickness="1">
+                                        <Grid RowDefinitions="Auto, Auto" RowSpacing="8">
+                                            <TextBlock Text="{Binding Name}"
+                                                       FontWeight="SemiBold"
+                                                       Foreground="{StaticResource TextPrimaryBrush}" />
+                                            <TextBox Grid.Row="1"
+                                                     Classes="editor"
+                                                     Text="{Binding Value, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                     Watermark="{Binding Name}" />
+                                        </Grid>
+                                    </Border>
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
                     </ScrollViewer>
-                </Border>
-            </Grid>
+                </Grid>
+            </Border>
         </Grid>
 
-        <Border Grid.Row="1" 
-                BorderBrush="Red" 
-                BorderThickness="0,2,0,0" 
-                Padding="5">
-            <StackPanel Orientation="Horizontal">
-                <TextBlock Text="Errors: " FontWeight="Bold" Foreground="Red" VerticalAlignment="Center"/>
-                <TextBox Text="{Binding ErrorMessage}"
-                         IsReadOnly="True"
-                         Foreground="Red"
-                         FontWeight="SemiBold"
-                         TextWrapping="Wrap"
-                         BorderThickness="0"
-                         Background="Transparent"
-                         VerticalAlignment="Center"
-                         HorizontalAlignment="Stretch"/>
-            </StackPanel>
+        <Border Grid.Row="2"
+                Background="#160C10"
+                BorderBrush="#5D1F2A"
+                BorderThickness="1,0,0,0"
+                Padding="14,12"
+                Margin="0,14,0,0">
+            <Grid ColumnDefinitions="Auto, *" ColumnSpacing="12">
+                <TextBlock Grid.Column="0"
+                           Text="Diagnostics"
+                           Foreground="{StaticResource DangerBrush}"
+                           FontWeight="Bold"
+                           VerticalAlignment="Center" />
+                <TextBlock Grid.Column="1"
+                           Text="{Binding ErrorMessage}"
+                           Foreground="#FFD2D9"
+                           TextWrapping="Wrap"
+                           VerticalAlignment="Center" />
+            </Grid>
         </Border>
     </Grid>
 </Window>

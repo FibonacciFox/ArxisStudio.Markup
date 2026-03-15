@@ -447,6 +447,7 @@ public static class ArxuiSerializer
     {
         return kind switch
         {
+            UiDocumentKind.Application => "Avalonia.Application",
             UiDocumentKind.Window => "Avalonia.Controls.Window",
             UiDocumentKind.Styles => "Avalonia.Styling.Styles",
             UiDocumentKind.ResourceDictionary => "Avalonia.Controls.ResourceDictionary",

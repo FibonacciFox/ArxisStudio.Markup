@@ -1,7 +1,9 @@
 // ArxisStudio.Markup.Json.Loader/Views/MainWindow.axaml.cs
 
 using Avalonia.Controls;
+using Avalonia.Input;
 using ArxisStudio.Markup.Json.Loader.ViewModels;
+using ArxisStudio.Markup.Json.Loader.Models;
 using Newtonsoft.Json.Linq;
 
 namespace ArxisStudio.Markup.Json.Loader.Views
@@ -26,6 +28,20 @@ namespace ArxisStudio.Markup.Json.Loader.Views
                 
                 // Сбрасываем выделение, чтобы можно было добавить еще один
                 listBox.SelectedItem = null; 
+            }
+        }
+
+        private void ProjectFilesListBox_DoubleTapped(object? sender, TappedEventArgs e)
+        {
+            if (sender is not ListBox listBox || listBox.SelectedItem is not ProjectFileItem)
+            {
+                return;
+            }
+
+            if (DataContext is MainWindowViewModel viewModel &&
+                viewModel.OpenSelectedProjectFileCommand.CanExecute(null))
+            {
+                viewModel.OpenSelectedProjectFileCommand.Execute(null);
             }
         }
     }

@@ -10,6 +10,7 @@ public sealed record UiDocument(
 
 public enum UiDocumentKind
 {
+    Application,
     Control,
     Window,
     Styles,

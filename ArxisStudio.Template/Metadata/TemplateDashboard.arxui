@@ -1,0 +1,341 @@
+{
+  "SchemaVersion": 1,
+  "Kind": "Control",
+  "Root": {
+    "TypeName": "Avalonia.Controls.UserControl",
+    "Properties": {
+      "Background": "#0A0F14",
+      "Content": {
+        "TypeName": "Avalonia.Controls.ScrollViewer",
+        "Properties": {
+          "Padding": "28",
+          "Content": {
+            "TypeName": "Avalonia.Controls.StackPanel",
+            "Properties": {
+              "Spacing": 20,
+              "Children": [
+                {
+                  "TypeName": "Avalonia.Controls.Border",
+                  "Properties": {
+                    "Background": {
+                      "$resource": "LocalCardBrush"
+                    },
+                    "BorderBrush": {
+                      "$resource": "TemplateBorderBrush"
+                    },
+                    "BorderThickness": "1",
+                    "Padding": "28",
+                    "Child": {
+                      "TypeName": "Avalonia.Controls.StackPanel",
+                      "Properties": {
+                        "Spacing": 14,
+                        "Children": [
+                          {
+                            "TypeName": "Avalonia.Controls.TextBlock",
+                            "Properties": {
+                              "Classes": "eyebrow",
+                              "Text": "ArxisStudio Template"
+                            }
+                          },
+                          {
+                            "TypeName": "Avalonia.Controls.TextBlock",
+                            "Properties": {
+                              "Classes": "hero-title",
+                              "Text": "Design richer Avalonia screens from .arxui"
+                            }
+                          },
+                          {
+                            "TypeName": "Avalonia.Controls.TextBlock",
+                            "Properties": {
+                              "Classes": "hero-copy",
+                              "TextWrapping": "Wrap",
+                              "Text": "This template project is meant to be opened in ArxisStudio.Editor and in the sample app. It demonstrates project loading, external styles, merged resource dictionaries and a more realistic dashboard composition."
+                            }
+                          },
+                          {
+                            "TypeName": "Avalonia.Controls.StackPanel",
+                            "Properties": {
+                              "Orientation": "Horizontal",
+                              "Spacing": 12,
+                              "Children": [
+                                {
+                                  "TypeName": "Avalonia.Controls.Button",
+                                  "Properties": {
+                                    "Classes": "primary-action",
+                                    "Content": "Open in Designer"
+                                  }
+                                },
+                                {
+                                  "TypeName": "Avalonia.Controls.Button",
+                                  "Properties": {
+                                    "Classes": "secondary-action",
+                                    "Content": "Inspect JSON"
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  }
+                },
+                {
+                  "TypeName": "Avalonia.Controls.StackPanel",
+                  "Properties": {
+                    "Orientation": "Horizontal",
+                    "Spacing": 18,
+                    "Children": [
+                      {
+                        "TypeName": "Avalonia.Controls.Border",
+                        "Properties": {
+                          "Width": 180,
+                          "Padding": "18",
+                          "Background": {
+                            "$resource": "TemplatePanelBrush"
+                          },
+                          "BorderBrush": {
+                            "$resource": "TemplateBorderBrush"
+                          },
+                          "BorderThickness": "1",
+                          "Child": {
+                            "TypeName": "Avalonia.Controls.StackPanel",
+                            "Properties": {
+                              "Spacing": 6,
+                              "Children": [
+                                {
+                                  "TypeName": "Avalonia.Controls.TextBlock",
+                                  "Properties": {
+                                    "Classes": "metric-value",
+                                    "Text": "12"
+                                  }
+                                },
+                                {
+                                  "TypeName": "Avalonia.Controls.TextBlock",
+                                  "Properties": {
+                                    "Classes": "metric-label",
+                                    "Text": ".arxui documents"
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "TypeName": "Avalonia.Controls.Border",
+                        "Properties": {
+                          "Width": 180,
+                          "Padding": "18",
+                          "Background": {
+                            "$resource": "TemplatePanelBrush"
+                          },
+                          "BorderBrush": {
+                            "$resource": "TemplateBorderBrush"
+                          },
+                          "BorderThickness": "1",
+                          "Child": {
+                            "TypeName": "Avalonia.Controls.StackPanel",
+                            "Properties": {
+                              "Spacing": 6,
+                              "Children": [
+                                {
+                                  "TypeName": "Avalonia.Controls.TextBlock",
+                                  "Properties": {
+                                    "Classes": "metric-value",
+                                    "Text": "4"
+                                  }
+                                },
+                                {
+                                  "TypeName": "Avalonia.Controls.TextBlock",
+                                  "Properties": {
+                                    "Classes": "metric-label",
+                                    "Text": "linked .axaml files"
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "TypeName": "Avalonia.Controls.Border",
+                        "Properties": {
+                          "Width": 180,
+                          "Padding": "18",
+                          "Background": {
+                            "$resource": "TemplatePanelBrush"
+                          },
+                          "BorderBrush": {
+                            "$resource": "TemplateBorderBrush"
+                          },
+                          "BorderThickness": "1",
+                          "Child": {
+                            "TypeName": "Avalonia.Controls.StackPanel",
+                            "Properties": {
+                              "Spacing": 6,
+                              "Children": [
+                                {
+                                  "TypeName": "Avalonia.Controls.TextBlock",
+                                  "Properties": {
+                                    "Classes": "metric-value",
+                                    "Text": "0"
+                                  }
+                                },
+                                {
+                                  "TypeName": "Avalonia.Controls.TextBlock",
+                                  "Properties": {
+                                    "Classes": "metric-label",
+                                    "Text": "runtime code executed"
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                },
+                {
+                  "TypeName": "Avalonia.Controls.StackPanel",
+                  "Properties": {
+                    "Orientation": "Horizontal",
+                    "Spacing": 18,
+                    "Children": [
+                      {
+                        "TypeName": "Avalonia.Controls.Border",
+                        "Properties": {
+                          "Width": 280,
+                          "Padding": "18",
+                          "Background": {
+                            "$resource": "TemplatePanelAltBrush"
+                          },
+                          "BorderBrush": {
+                            "$resource": "TemplateBorderBrush"
+                          },
+                          "BorderThickness": "1",
+                          "Child": {
+                            "TypeName": "Avalonia.Controls.StackPanel",
+                            "Properties": {
+                              "Spacing": 8,
+                              "Children": [
+                                {
+                                  "TypeName": "Avalonia.Controls.TextBlock",
+                                  "Properties": {
+                                    "Classes": "card-title",
+                                    "Text": "Project-aware preview"
+                                  }
+                                },
+                                {
+                                  "TypeName": "Avalonia.Controls.TextBlock",
+                                  "Properties": {
+                                    "Classes": "card-copy",
+                                    "TextWrapping": "Wrap",
+                                    "Text": "The editor reads the opened project, discovers .arxui documents and applies local styles and merged resources during preview."
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "TypeName": "Avalonia.Controls.Border",
+                        "Properties": {
+                          "Width": 280,
+                          "Padding": "18",
+                          "Background": {
+                            "$resource": "TemplatePanelAltBrush"
+                          },
+                          "BorderBrush": {
+                            "$resource": "TemplateBorderBrush"
+                          },
+                          "BorderThickness": "1",
+                          "Child": {
+                            "TypeName": "Avalonia.Controls.StackPanel",
+                            "Properties": {
+                              "Spacing": 8,
+                              "Children": [
+                                {
+                                  "TypeName": "Avalonia.Controls.TextBlock",
+                                  "Properties": {
+                                    "Classes": "card-title",
+                                    "Text": "Safe design mode"
+                                  }
+                                },
+                                {
+                                  "TypeName": "Avalonia.Controls.TextBlock",
+                                  "Properties": {
+                                    "Classes": "card-copy",
+                                    "TextWrapping": "Wrap",
+                                    "Text": "Preview uses the declarative model and project resources without executing user event handlers or application startup logic."
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "TypeName": "Avalonia.Controls.Border",
+                        "Properties": {
+                          "Width": 280,
+                          "Padding": "18",
+                          "Background": {
+                            "$resource": "TemplatePanelAltBrush"
+                          },
+                          "BorderBrush": {
+                            "$resource": "TemplateBorderBrush"
+                          },
+                          "BorderThickness": "1",
+                          "Child": {
+                            "TypeName": "Avalonia.Controls.StackPanel",
+                            "Properties": {
+                              "Spacing": 8,
+                              "Children": [
+                                {
+                                  "TypeName": "Avalonia.Controls.TextBlock",
+                                  "Properties": {
+                                    "Classes": "card-title",
+                                    "Text": "Extensible model"
+                                  }
+                                },
+                                {
+                                  "TypeName": "Avalonia.Controls.TextBlock",
+                                  "Properties": {
+                                    "Classes": "card-copy",
+                                    "TextWrapping": "Wrap",
+                                    "Text": "The layout, resources and styles remain data-driven, which keeps the designer generic instead of hardcoding a fixed widget catalog."
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    "Styles": [
+      {
+        "$styleInclude": "avares://ArxisStudio.Markup.Template/Styles/TemplateStyles.axaml"
+      }
+    ],
+    "Resources": {
+      "$mergedDictionaries": [
+        {
+          "Source": "avares://ArxisStudio.Markup.Template/Styles/TemplateResources.axaml"
+        }
+      ],
+      "LocalCardBrush": "#FF1B263B"
+    }
+  },
+  "Class": "ArxisStudio.Markup.Template.Forms.TemplateDashboard"
+}

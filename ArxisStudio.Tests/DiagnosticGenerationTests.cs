@@ -28,6 +28,17 @@ namespace TestApp.Views
 }
 ";
 
+        private const string PartialApplicationSource = @"
+using Avalonia;
+
+namespace TestApp
+{
+    public partial class ValidApp : Application
+    {
+    }
+}
+";
+
         [Fact]
         public void Missing_class_should_report_ADG0005()
         {
@@ -221,6 +232,51 @@ namespace TestApp.Views
                 ("Styles.arxui", json));
 
             Assert.DoesNotContain(diagnostics, d => d.Id == "ADG0005");
+        }
+
+        [Fact]
+        public void Application_with_missing_class_should_report_ADG0005()
+        {
+            const string json = @"
+{
+  ""SchemaVersion"": 1,
+  ""Kind"": ""Application"",
+  ""Root"": {
+    ""TypeName"": ""Avalonia.Application"",
+    ""Properties"": {}
+  }
+}
+";
+
+            var diagnostics = GeneratorTestHelper.GetGeneratorDiagnostics(
+                PartialApplicationSource,
+                "App.arxui.cs",
+                ("App.arxui", json));
+
+            Assert.Contains(diagnostics, d => d.Id == "ADG0005" && d.Severity == DiagnosticSeverity.Error);
+        }
+
+        [Fact]
+        public void Application_with_matching_class_should_not_report_kind_diagnostics()
+        {
+            const string json = @"
+{
+  ""SchemaVersion"": 1,
+  ""Kind"": ""Application"",
+  ""Class"": ""TestApp.ValidApp"",
+  ""Root"": {
+    ""TypeName"": ""Avalonia.Application"",
+    ""Properties"": {}
+  }
+}
+";
+
+            var diagnostics = GeneratorTestHelper.GetGeneratorDiagnostics(
+                PartialApplicationSource,
+                "App.arxui.cs",
+                ("App.arxui", json));
+
+            Assert.DoesNotContain(diagnostics, d => d.Id is "ADG0008" or "ADG0010" or "ADG0011");
         }
     }
 }
