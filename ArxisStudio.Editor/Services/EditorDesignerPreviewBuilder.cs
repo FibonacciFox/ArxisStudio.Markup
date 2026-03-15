@@ -8,6 +8,7 @@ using ArxisStudio.Markup.Json.Loader.Models;
 using ArxisStudio.Markup.Json.Loader;
 using ArxisStudio.Markup;
 using ArxisStudio.Markup.Json;
+using ArxisStudio.Markup.Json.Loader.Services;
 
 namespace ArxisStudio.Editor.Services;
 
@@ -25,7 +26,18 @@ public sealed class EditorDesignerPreviewBuilder : IDesignerPreviewBuilder
     public DesignerPreviewScene Build(UiDocument document, DesignerSurfaceContext context)
     {
         var nodeMap = new Dictionary<UiNode, Control>();
-        var rootControl = UiBuilder.Build(document.Root, ProjectContext, nodeMap);
+        var loader = new ArxuiLoader();
+        var loadContext = new ArxuiLoadContext
+        {
+            TypeResolver = new ReflectionTypeResolver(),
+            AssetResolver = new DefaultAssetResolver(),
+            DocumentResolver = ProjectContext != null ? new ProjectMarkupDocumentResolver(ProjectContext) : null,
+            TopLevelControlFactory = new DefaultTopLevelControlFactory(),
+            ProjectContext = ProjectContext,
+            NodeMap = nodeMap,
+            Options = new ArxuiLoadOptions()
+        };
+        var rootControl = loader.Load(document.Root, loadContext) ?? new TextBlock();
         var surfaceSize = new Size(
             document.Design?.SurfaceWidth ?? 1280,
             document.Design?.SurfaceHeight ?? 800);

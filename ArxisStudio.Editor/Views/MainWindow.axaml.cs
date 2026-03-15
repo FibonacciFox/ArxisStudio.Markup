@@ -2,6 +2,7 @@
 
 using Avalonia.Controls;
 using Avalonia.Input;
+using ArxisStudio.Editor.Models;
 using ArxisStudio.Editor.ViewModels;
 using ArxisStudio.Markup.Json.Loader.Models;
 using Newtonsoft.Json.Linq;
@@ -18,12 +19,11 @@ namespace ArxisStudio.Editor.Views
         // Обработчик события выбора элемента из Toolbox
         private void ToolboxListBox_SelectionChanged(object? sender, SelectionChangedEventArgs e)
         {
-            if (sender is ListBox listBox && listBox.SelectedItem is JObject selectedTemplate)
+            if (sender is ListBox listBox && listBox.SelectedItem is ToolboxItem selectedItem)
             {
                 if (DataContext is MainWindowViewModel viewModel)
                 {
-                    // Вызываем команду добавления, передавая JSON-шаблон
-                    viewModel.AddNewControlCommand.Execute(selectedTemplate);
+                    viewModel.AddNewControlCommand.Execute(selectedItem.Template);
                 }
                 
                 // Сбрасываем выделение, чтобы можно было добавить еще один

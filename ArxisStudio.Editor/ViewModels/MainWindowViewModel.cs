@@ -19,12 +19,17 @@ using ArxisStudio.Markup.Json.Loader.Models;
 using System.Threading.Tasks;
 using ArxisStudio.Designer.Abstractions;
 using ArxisStudio.Designer.Services;
+using ArxisStudio.Markup.Json.Loader.Services;
+using ArxisStudio.Markup.Workspace.Models;
+using ArxisStudio.Markup.Workspace.Services;
 
 namespace ArxisStudio.Editor.ViewModels
 {
     public partial class MainWindowViewModel : ObservableObject
     {
         private readonly ProjectDiscoveryService _projectDiscoveryService = new();
+        private readonly RoslynWorkspaceService _workspaceService = new();
+        private readonly ArxuiSemanticValidator _semanticValidator = new();
         private bool _suppressJsonTextChanged;
         private bool _selectionSyncInProgress;
         private string? _currentDocumentPath;
@@ -60,6 +65,9 @@ namespace ArxisStudio.Editor.ViewModels
 
         [ObservableProperty]
         private ProjectContext? _loadedProject;
+
+        [ObservableProperty]
+        private WorkspaceContext? _loadedWorkspace;
 
         [ObservableProperty]
         private ProjectFileItem? _selectedProjectFile;
@@ -106,52 +114,7 @@ namespace ArxisStudio.Editor.ViewModels
 
         public ObservableCollection<ProjectFileItem> ProjectArxuiFiles { get; } = new();
 
-        // Коллекция доступных контролов (для Toolbox)
-        public ObservableCollection<JObject> AvailableControls { get; } = new()
-        {
-            new JObject
-            {
-                { "TypeName", "Avalonia.Controls.Button" },
-                { "Properties", new JObject 
-                    {
-                        { "Content", "New Button" },
-                        { "Width", 100 } 
-                    }
-                }
-            },
-            new JObject
-            {
-                { "TypeName", "Avalonia.Controls.StackPanel" },
-                { "Properties", new JObject 
-                    {
-                        { "Orientation", "Vertical" },
-                        { "Children", new JArray() } 
-                    }
-                }
-            },
-            new JObject
-            {
-                { "TypeName", "Avalonia.Controls.TextBlock" },
-                { "Properties", new JObject 
-                    {
-                        { "Text", "New TextBlock" },
-                        { "FontSize", 16 }
-                    }
-                }
-            },
-            new JObject
-            {
-                { "TypeName", "Avalonia.Controls.Border" },
-                { "Properties", new JObject 
-                    {
-                        { "Width", 150 },
-                        { "Height", 50 },
-                        { "BorderBrush", "Gray" },
-                        { "BorderThickness", 1 }
-                    }
-                }
-            }
-        };
+        public ObservableCollection<ToolboxItem> AvailableControls { get; } = new();
 
         public MainWindowViewModel()
         {
@@ -196,6 +159,12 @@ namespace ArxisStudio.Editor.ViewModels
             }
 
             RunProjectCommand.NotifyCanExecuteChanged();
+        }
+
+        partial void OnLoadedWorkspaceChanged(WorkspaceContext? value)
+        {
+            RebuildToolbox(value);
+            LoadProperties(SelectedNode);
         }
 
         partial void OnProjectPathInputChanged(string value)
@@ -293,7 +262,17 @@ namespace ArxisStudio.Editor.ViewModels
                 }
 
                 // 3. Строим UI (Рендеринг)
-                RenderedContent = UiBuilder.Build(rootModel.Root, LoadedProject);
+                var loader = new ArxuiLoader();
+                var loadContext = new ArxuiLoadContext
+                {
+                    TypeResolver = new ReflectionTypeResolver(),
+                    AssetResolver = new DefaultAssetResolver(),
+                    DocumentResolver = LoadedProject != null ? new ProjectMarkupDocumentResolver(LoadedProject) : null,
+                    TopLevelControlFactory = new DefaultTopLevelControlFactory(),
+                    ProjectContext = LoadedProject,
+                    Options = new ArxuiLoadOptions()
+                };
+                RenderedContent = loader.Load(rootModel.Root, loadContext);
                 
                 if (!rebuildTree)
                 {
@@ -356,20 +335,69 @@ namespace ArxisStudio.Editor.ViewModels
         {
             EditableProperties.Clear();
 
-            if (node?.JsonNode.TryGetValue("Properties", out JToken? propertiesToken) == true && propertiesToken is JObject propertiesObject)
+            if (node?.JsonNode.TryGetValue("Properties", out JToken? propertiesToken) != true || propertiesToken is not JObject propertiesObject)
             {
-                foreach (var prop in propertiesObject.Properties())
+                return;
+            }
+
+            var typeName = node.JsonNode["TypeName"]?.ToString();
+            if (!string.IsNullOrWhiteSpace(typeName) &&
+                LoadedWorkspace != null &&
+                LoadedWorkspace.Types.TryGetValue(typeName, out var typeMetadata))
+            {
+                foreach (var property in typeMetadata.Properties.Where(property => property.CanWrite && !property.IsCollection))
                 {
-                    if (prop.Value is JValue jValue)
-                    {
-                        var item = new PropertyItem(
-                            prop.Name, 
-                            jValue, 
-                            propertiesObject
-                        );
-                        EditableProperties.Add(item);
-                    }
+                    propertiesObject.TryGetValue(property.Name, out var existingValue);
+                    EditableProperties.Add(new PropertyItem(property.Name, existingValue, propertiesObject, property.TypeName));
                 }
+
+                foreach (var prop in propertiesObject.Properties().Where(prop => prop.Value is JValue)
+                             .Where(prop => typeMetadata.Properties.All(metadata => !string.Equals(metadata.Name, prop.Name, StringComparison.Ordinal))))
+                {
+                    EditableProperties.Add(new PropertyItem(prop.Name, prop.Value, propertiesObject));
+                }
+
+                return;
+            }
+
+            foreach (var prop in propertiesObject.Properties())
+            {
+                if (prop.Value is JValue jValue)
+                {
+                    EditableProperties.Add(new PropertyItem(prop.Name, jValue, propertiesObject));
+                }
+            }
+        }
+
+        private void RebuildToolbox(WorkspaceContext? workspace)
+        {
+            AvailableControls.Clear();
+
+            if (workspace == null)
+            {
+                return;
+            }
+
+            foreach (var type in workspace.FrameworkTypes.Values
+                         .Concat(workspace.Types.Values)
+                         .GroupBy(type => type.FullName, StringComparer.Ordinal)
+                         .Select(group => group.First())
+                         .Where(type => type.IsControl && !type.IsTopLevel)
+                         .OrderBy(type => type.Name, StringComparer.Ordinal))
+            {
+                var properties = new JObject();
+                if (type.Properties.Any(property => string.Equals(property.Name, "Children", StringComparison.Ordinal)))
+                {
+                    properties["Children"] = new JArray();
+                }
+
+                var template = new JObject
+                {
+                    ["TypeName"] = type.FullName,
+                    ["Properties"] = properties
+                };
+
+                AvailableControls.Add(new ToolboxItem(type.FullName, type.Name, template));
             }
         }
 
@@ -516,7 +544,9 @@ namespace ArxisStudio.Editor.ViewModels
             {
                 ErrorMessage = "";
                 var project = _projectDiscoveryService.Load(ProjectPathInput);
+                var workspace = _workspaceService.Load(ProjectPathInput);
                 LoadedProject = project;
+                LoadedWorkspace = workspace;
 
                 ProjectArxuiFiles.Clear();
                 foreach (var file in project.ArxuiFiles)
@@ -525,11 +555,11 @@ namespace ArxisStudio.Editor.ViewModels
                 }
 
                 ProjectSummary =
-                    $"Project: {Path.GetFileName(project.ProjectPath)} | Assembly: {project.AssemblyName} | TFM: {project.TargetFramework} | .arxui: {project.ArxuiFiles.Count} | .axaml: {project.AxamlFiles.Count}";
+                    $"Project: {Path.GetFileName(project.ProjectPath)} | Assembly: {project.AssemblyName} | TFM: {project.TargetFramework} | .arxui: {project.ArxuiFiles.Count} | .axaml: {project.AxamlFiles.Count} | indexed types: {workspace.Types.Count}";
 
                 if (ProjectArxuiFiles.Count > 0)
                 {
-                    var startupFile = SelectStartupDocument(ProjectArxuiFiles) ?? ProjectArxuiFiles[0];
+                    var startupFile = SelectStartupDocument(ProjectArxuiFiles, workspace) ?? ProjectArxuiFiles[0];
                     SelectedProjectFile = startupFile;
                     OpenProjectFile(startupFile);
                 }
@@ -567,6 +597,15 @@ namespace ArxisStudio.Editor.ViewModels
                 }
 
                 UpdateTreeAndUIFromText();
+
+                if (LoadedWorkspace != null && CurrentDocument != null)
+                {
+                    var diagnostics = _semanticValidator.Validate(CurrentDocument, LoadedWorkspace);
+                    if (diagnostics.Count > 0)
+                    {
+                        ErrorMessage = string.Join(Environment.NewLine, diagnostics.Select(diagnostic => diagnostic.Message));
+                    }
+                }
             }
             catch (Exception ex)
             {
@@ -576,8 +615,27 @@ namespace ArxisStudio.Editor.ViewModels
 
         public bool CanOpenSelectedProjectFile => SelectedProjectFile != null;
 
-        private static ProjectFileItem? SelectStartupDocument(IEnumerable<ProjectFileItem> files)
+        private static ProjectFileItem? SelectStartupDocument(IEnumerable<ProjectFileItem> files, WorkspaceContext? workspace)
         {
+            if (workspace != null)
+            {
+                foreach (var document in workspace.Documents)
+                {
+                    if (!document.IsPreviewable)
+                    {
+                        continue;
+                    }
+
+                    var matchedFile = files.FirstOrDefault(file =>
+                        string.Equals(file.FullPath, document.FullPath, StringComparison.OrdinalIgnoreCase));
+
+                    if (matchedFile != null)
+                    {
+                        return matchedFile;
+                    }
+                }
+            }
+
             foreach (var file in files)
             {
                 var kind = TryReadDocumentKind(file.FullPath);

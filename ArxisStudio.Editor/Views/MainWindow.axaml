@@ -265,8 +265,8 @@
                                      SelectionMode="Single"
                                      SelectionChanged="ToolboxListBox_SelectionChanged">
                                 <ListBox.ItemTemplate>
-                                    <DataTemplate x:DataType="j:JObject">
-                                        <TextBlock Text="{Binding [TypeName]}"
+                                    <DataTemplate x:DataType="m:ToolboxItem">
+                                        <TextBlock Text="{Binding DisplayName}"
                                                    Margin="4"
                                                    Foreground="{StaticResource TextPrimaryBrush}"
                                                    ToolTip.Tip="Select to add to the chosen container" />
@@ -391,9 +391,9 @@
                                                         BorderBrush="{StaticResource StrokeBrush}"
                                                         BorderThickness="1"
                                                         Padding="40"
-                                                        Width="{Binding PreviewSurfaceWidth}"
-                                                        Height="{Binding PreviewSurfaceHeight}"
-                                                        RenderTransformOrigin="0.5,0.5">
+                                                        HorizontalAlignment="Left"
+                                                        VerticalAlignment="Top"
+                                                        RenderTransformOrigin="0,0">
                                                     <Border.RenderTransform>
                                                         <ScaleTransform ScaleX="{Binding PreviewZoom}" ScaleY="{Binding PreviewZoom}" />
                                                     </Border.RenderTransform>
@@ -538,9 +538,9 @@
                                                             BorderBrush="{StaticResource StrokeBrush}"
                                                             BorderThickness="1"
                                                             Padding="40"
-                                                            Width="{Binding PreviewSurfaceWidth}"
-                                                            Height="{Binding PreviewSurfaceHeight}"
-                                                            RenderTransformOrigin="0.5,0.5">
+                                                            HorizontalAlignment="Left"
+                                                            VerticalAlignment="Top"
+                                                            RenderTransformOrigin="0,0">
                                                         <Border.RenderTransform>
                                                             <ScaleTransform ScaleX="{Binding PreviewZoom}" ScaleY="{Binding PreviewZoom}" />
                                                         </Border.RenderTransform>

@@ -31,6 +31,7 @@
         <ProjectReference Include="..\ArxisStudio.Markup\ArxisStudio.Markup.csproj" />
         <ProjectReference Include="..\ArxisStudio.Markup.Json\ArxisStudio.Markup.Json.csproj" />
         <ProjectReference Include="..\ArxisStudio.Markup.Json.Loader\ArxisStudio.Markup.Json.Loader.csproj" />
+        <ProjectReference Include="..\ArxisStudio.Markup.Workspace\ArxisStudio.Markup.Workspace.csproj" />
         <ProjectReference Include="..\ArxisStudio.Designer\ArxisStudio.Designer.csproj" />
     </ItemGroup>
 </Project>
