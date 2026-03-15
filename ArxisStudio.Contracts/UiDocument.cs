@@ -18,7 +18,24 @@ public enum UiDocumentKind
 
 public sealed record UiNode(
     string TypeName,
-    IReadOnlyDictionary<string, UiValue> Properties);
+    IReadOnlyDictionary<string, UiValue> Properties,
+    UiStyles? Styles = null,
+    UiResources? Resources = null);
+
+public sealed record UiStyles(
+    IReadOnlyList<UiStyleValue> Items);
+
+public abstract record UiStyleValue;
+
+public sealed record StyleIncludeValue(string Source) : UiStyleValue;
+
+public sealed record StyleNodeValue(UiNode Node) : UiStyleValue;
+
+public sealed record UiResources(
+    IReadOnlyList<UiResourceDictionaryInclude> MergedDictionaries,
+    IReadOnlyDictionary<string, UiValue> Values);
+
+public sealed record UiResourceDictionaryInclude(string Source);
 
 public abstract record UiValue;
 

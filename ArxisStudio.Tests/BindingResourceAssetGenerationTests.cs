@@ -22,6 +22,29 @@ namespace TestApp.Views
   ""Class"": ""TestApp.Views.BindingResourceAssetControl"",
   ""Root"": {
     ""TypeName"": ""Avalonia.Controls.UserControl"",
+    ""Styles"": [
+      {
+        ""$styleInclude"": ""avares://Sample.Assembly/Styles/BindingResourceAsset.axaml""
+      },
+      {
+        ""TypeName"": ""Avalonia.Styling.Style"",
+        ""Properties"": {}
+      }
+    ],
+    ""Resources"": {
+      ""$mergedDictionaries"": [
+        {
+          ""Source"": ""avares://Sample.Assembly/Resources/Common.axaml""
+        }
+      ],
+      ""LocalBorder"": {
+        ""TypeName"": ""Avalonia.Controls.Border"",
+        ""Properties"": {
+          ""Name"": ""LocalBorderResource"",
+          ""Width"": 100
+        }
+      }
+    },
     ""Properties"": {
       ""Background"": {
         ""$resource"": ""BackgroundBrush""
@@ -78,6 +101,15 @@ namespace TestApp.Views
 
             Assert.Contains(
                 "this.Bind(global::Avalonia.Controls.UserControl.BackgroundProperty, this.GetResourceObservable(\"BackgroundBrush\"));",
+                source);
+            Assert.Contains(
+                "this.Resources.MergedDictionaries.Add(new global::Avalonia.Markup.Xaml.Styling.ResourceInclude(new global::System.Uri(\"avares://Sample.Assembly/Resources/Common.axaml\")) { Source = new global::System.Uri(\"avares://Sample.Assembly/Resources/Common.axaml\") });",
+                source);
+            Assert.Contains(
+                "this.Styles.Add(new global::Avalonia.Markup.Xaml.Styling.StyleInclude(new global::System.Uri(\"avares://Sample.Assembly/Styles/BindingResourceAsset.axaml\")) { Source = new global::System.Uri(\"avares://Sample.Assembly/Styles/BindingResourceAsset.axaml\") });",
+                source);
+            Assert.Contains(
+                "this.Resources[\"LocalBorder\"] = this.LocalBorderResource;",
                 source);
             Assert.Contains(
                 "this.MessageText.Bind(global::Avalonia.Controls.TextBlock.TextProperty, new global::Avalonia.Data.Binding(\"UserName\") { Mode = global::Avalonia.Data.BindingMode.TwoWay, StringFormat = \"Hello {0}\", RelativeSource = new global::Avalonia.Data.RelativeSource(global::Avalonia.Data.RelativeSourceMode.Self) });",

@@ -78,6 +78,9 @@ namespace ArxisStudio.Markup.Json.Generator.Builders
                  return; 
             }
 
+            propertyGenerator.GenerateHostResources(writer, "this", document.Root.Resources);
+            propertyGenerator.GenerateHostStyles(writer, "this", document.Root.Styles);
+
             foreach (var prop in document.Root.Properties)
             {
                 propertyGenerator.GeneratePropertyAssignment(
@@ -103,6 +106,8 @@ namespace ArxisStudio.Markup.Json.Generator.Builders
                     if (name != null) controls.Add(new ControlInfo(nodeValue.Node.TypeName, name));
                     var childType = _resolver.ResolveType(nodeValue.Node.TypeName);
                     CollectFieldsFromProperties(nodeValue.Node.Properties, childType, controls);
+                    CollectFieldsFromStyles(nodeValue.Node.Styles, controls);
+                    CollectFieldsFromResources(nodeValue.Node.Resources, controls);
                 }
                 else if (propEntry.Value is CollectionValue collectionValue)
                 {
@@ -114,9 +119,65 @@ namespace ArxisStudio.Markup.Json.Generator.Builders
                              if (name != null) controls.Add(new ControlInfo(childNode.Node.TypeName, name));
                              var childType = _resolver.ResolveType(childNode.Node.TypeName);
                              CollectFieldsFromProperties(childNode.Node.Properties, childType, controls);
+                             CollectFieldsFromStyles(childNode.Node.Styles, controls);
+                             CollectFieldsFromResources(childNode.Node.Resources, controls);
                         }
                     }
                 }
+            }
+        }
+
+        private void CollectFieldsFromStyles(UiStyles? styles, List<ControlInfo> controls)
+        {
+            if (styles == null)
+            {
+                return;
+            }
+
+            foreach (var item in styles.Items)
+            {
+                if (item is not StyleNodeValue styleNode)
+                {
+                    continue;
+                }
+
+                string? name = FindControlName(styleNode.Node);
+                if (name != null)
+                {
+                    controls.Add(new ControlInfo(styleNode.Node.TypeName, name));
+                }
+
+                var styleType = _resolver.ResolveType(styleNode.Node.TypeName);
+                CollectFieldsFromProperties(styleNode.Node.Properties, styleType, controls);
+                CollectFieldsFromStyles(styleNode.Node.Styles, controls);
+                CollectFieldsFromResources(styleNode.Node.Resources, controls);
+            }
+        }
+
+        private void CollectFieldsFromResources(UiResources? resources, List<ControlInfo> controls)
+        {
+            if (resources == null)
+            {
+                return;
+            }
+
+            foreach (var entry in resources.Values.Values)
+            {
+                if (entry is not NodeValue nodeValue)
+                {
+                    continue;
+                }
+
+                string? name = FindControlName(nodeValue.Node);
+                if (name != null)
+                {
+                    controls.Add(new ControlInfo(nodeValue.Node.TypeName, name));
+                }
+
+                var resourceType = _resolver.ResolveType(nodeValue.Node.TypeName);
+                CollectFieldsFromProperties(nodeValue.Node.Properties, resourceType, controls);
+                CollectFieldsFromStyles(nodeValue.Node.Styles, controls);
+                CollectFieldsFromResources(nodeValue.Node.Resources, controls);
             }
         }
 

@@ -163,7 +163,7 @@ namespace ArxisStudio.Markup.Json.Generator.Services
                     {
                         if (elementModel is NodeValue nodeItem)
                         {
-                            string? varName = GenerateNestedControl(writer, nodeItem.Node, $"{propertyName}_{index}");
+                            string? varName = GenerateNestedObject(writer, nodeItem.Node, $"{propertyName}_{index}");
                             if (varName != null) writer.WriteLine($"{collectionName}.Add({varName});");
                         }
                         else if (elementModel is ScalarValue scalarItem && scalarItem.Value != null)
@@ -180,7 +180,7 @@ namespace ArxisStudio.Markup.Json.Generator.Services
             // 2.5 Вложенные контролы
             if (value is NodeValue nodeValue)
             {
-                string? assignedVarName = GenerateNestedControl(writer, nodeValue.Node, propertyName);
+                string? assignedVarName = GenerateNestedObject(writer, nodeValue.Node, propertyName);
                 if (assignedVarName != null)
                     writer.WriteLine($"{targetName}.{propertyName} = {assignedVarName};");
                 return;
@@ -219,7 +219,89 @@ namespace ArxisStudio.Markup.Json.Generator.Services
             }
         }
 
-        private string? GenerateNestedControl(IndentedTextWriter writer, UiNode node, string propertyName)
+        public void GenerateHostResources(IndentedTextWriter writer, string targetName, UiResources? resources)
+        {
+            if (resources == null)
+            {
+                return;
+            }
+
+            foreach (var include in resources.MergedDictionaries)
+            {
+                var source = EscapeStringLiteral(include.Source);
+                writer.WriteLine(
+                    $"{targetName}.Resources.MergedDictionaries.Add(new global::Avalonia.Markup.Xaml.Styling.ResourceInclude(new global::System.Uri(\"{source}\")) {{ Source = new global::System.Uri(\"{source}\") }});");
+            }
+
+            foreach (var entry in resources.Values)
+            {
+                var assignment = GenerateResourceValueExpression(writer, entry.Value, $"resource_{SanitizeIdentifier(entry.Key)}");
+                if (assignment != null)
+                {
+                    writer.WriteLine($"{targetName}.Resources[\"{EscapeStringLiteral(entry.Key)}\"] = {assignment};");
+                }
+            }
+        }
+
+        public void GenerateHostStyles(IndentedTextWriter writer, string targetName, UiStyles? styles)
+        {
+            if (styles == null)
+            {
+                return;
+            }
+
+            var index = 0;
+            foreach (var style in styles.Items)
+            {
+                switch (style)
+                {
+                    case StyleIncludeValue include:
+                    {
+                        var source = EscapeStringLiteral(include.Source);
+                        writer.WriteLine(
+                            $"{targetName}.Styles.Add(new global::Avalonia.Markup.Xaml.Styling.StyleInclude(new global::System.Uri(\"{source}\")) {{ Source = new global::System.Uri(\"{source}\") }});");
+                        break;
+                    }
+                    case StyleNodeValue node:
+                    {
+                        var varName = GenerateNestedObject(writer, node.Node, $"style_{index}");
+                        if (varName != null)
+                        {
+                            writer.WriteLine($"{targetName}.Styles.Add({varName});");
+                        }
+
+                        break;
+                    }
+                }
+
+                index++;
+            }
+        }
+
+        private string? GenerateResourceValueExpression(IndentedTextWriter writer, UiValue value, string identifierHint)
+        {
+            return value switch
+            {
+                ScalarValue scalar => scalar.Value != null ? _formatter.Format(scalar.Value, null) : "null",
+                NodeValue node => GenerateNestedObject(writer, node.Node, identifierHint),
+                ResourceValue resource => $"this.FindResource(\"{EscapeStringLiteral(resource.Key)}\")",
+                UriReferenceValue asset => GenerateAssetExpression(asset),
+                _ => null
+            };
+        }
+
+        private string GenerateAssetExpression(UriReferenceValue assetReference)
+        {
+            string targetAssembly = !string.IsNullOrEmpty(assetReference.Assembly) ? assetReference.Assembly! : _assemblyName;
+            string cleanPath = assetReference.Path.TrimStart('/');
+            string uriString = $"avares://{targetAssembly}/{cleanPath}";
+            string escapedUri = EscapeStringLiteral(uriString);
+            string streamCode = $"global::Avalonia.Platform.AssetLoader.Open(new global::System.Uri(\"{escapedUri}\"))";
+
+            return $"new global::Avalonia.Media.Imaging.Bitmap({streamCode})";
+        }
+
+        private string? GenerateNestedObject(IndentedTextWriter writer, UiNode node, string propertyName)
         {
             var objectType = _resolver.ResolveType(node.TypeName);
             if (objectType == null)
@@ -245,6 +327,9 @@ namespace ArxisStudio.Markup.Json.Generator.Services
                 assignedVarName = $"_gen_{propertyName}_{Guid.NewGuid().ToString("N").Substring(0, 4)}";
                 writer.WriteLine($"{fullTypeName} {assignedVarName} = new {fullTypeName}();");
             }
+
+            GenerateHostResources(writer, assignedVarName, node.Resources);
+            GenerateHostStyles(writer, assignedVarName, node.Styles);
 
             foreach (var propEntry in node.Properties)
             {
@@ -286,6 +371,17 @@ namespace ArxisStudio.Markup.Json.Generator.Services
             {
                  _context.ReportDiagnostic(Diagnostic.Create(DiagnosticDescriptors.PropertyNotFound, Location.None, propName, ownerName));
             }
+        }
+
+        private static string EscapeStringLiteral(string value)
+        {
+            return value.Replace("\\", "\\\\").Replace("\"", "\\\"");
+        }
+
+        private static string SanitizeIdentifier(string value)
+        {
+            var chars = value.Select(ch => char.IsLetterOrDigit(ch) ? ch : '_').ToArray();
+            return chars.Length == 0 ? "item" : new string(chars);
         }
     }
 }

@@ -14,6 +14,28 @@ namespace ArxisStudio.Markup.Json.Generator.Tests
   ""Class"": ""Sample.Views.ProfileView"",
   ""Root"": {
     ""TypeName"": ""Avalonia.Controls.UserControl"",
+    ""Styles"": [
+      {
+        ""$styleInclude"": ""avares://Sample.Assembly/Styles/ProfileView.axaml""
+      },
+      {
+        ""TypeName"": ""Avalonia.Styling.Style"",
+        ""Properties"": {}
+      }
+    ],
+    ""Resources"": {
+      ""$mergedDictionaries"": [
+        {
+          ""Source"": ""avares://Sample.Assembly/Resources/Common.axaml""
+        }
+      ],
+      ""NodeSelector"": {
+        ""TypeName"": ""Avalonia.Controls.Border"",
+        ""Properties"": {
+          ""Name"": ""SelectorBorder""
+        }
+      }
+    },
     ""Properties"": {
       ""Width"": 320,
       ""Background"": {
@@ -53,6 +75,17 @@ namespace ArxisStudio.Markup.Json.Generator.Tests
             Assert.Equal(UiDocumentKind.Control, document.Kind);
             Assert.Equal("Sample.Views.ProfileView", document.Class);
             Assert.Equal("Avalonia.Controls.UserControl", document.Root.TypeName);
+            Assert.NotNull(document.Root.Styles);
+            Assert.Equal(2, document.Root.Styles!.Items.Count);
+            var styleInclude = Assert.IsType<StyleIncludeValue>(document.Root.Styles.Items[0]);
+            Assert.Equal("avares://Sample.Assembly/Styles/ProfileView.axaml", styleInclude.Source);
+            var inlineStyle = Assert.IsType<StyleNodeValue>(document.Root.Styles.Items[1]);
+            Assert.Equal("Avalonia.Styling.Style", inlineStyle.Node.TypeName);
+            Assert.NotNull(document.Root.Resources);
+            Assert.Single(document.Root.Resources!.MergedDictionaries);
+            Assert.Equal("avares://Sample.Assembly/Resources/Common.axaml", document.Root.Resources.MergedDictionaries[0].Source);
+            var nodeSelector = Assert.IsType<NodeValue>(document.Root.Resources.Values["NodeSelector"]);
+            Assert.Equal("Avalonia.Controls.Border", nodeSelector.Node.TypeName);
 
             var background = Assert.IsType<ResourceValue>(document.Root.Properties["Background"]);
             Assert.Equal("BackgroundBrush", background.Key);
@@ -83,6 +116,15 @@ namespace ArxisStudio.Markup.Json.Generator.Tests
             Assert.Equal(original.Kind, roundTripped.Kind);
             Assert.Equal(original.Class, roundTripped.Class);
             Assert.Equal(original.Root.TypeName, roundTripped.Root.TypeName);
+            Assert.NotNull(roundTripped.Root.Styles);
+            Assert.Equal(2, roundTripped.Root.Styles!.Items.Count);
+            var roundTrippedStyleInclude = Assert.IsType<StyleIncludeValue>(roundTripped.Root.Styles.Items[0]);
+            Assert.Equal("avares://Sample.Assembly/Styles/ProfileView.axaml", roundTrippedStyleInclude.Source);
+            Assert.NotNull(roundTripped.Root.Resources);
+            Assert.Single(roundTripped.Root.Resources!.MergedDictionaries);
+            Assert.Equal("avares://Sample.Assembly/Resources/Common.axaml", roundTripped.Root.Resources.MergedDictionaries[0].Source);
+            var roundTrippedNodeSelector = Assert.IsType<NodeValue>(roundTripped.Root.Resources.Values["NodeSelector"]);
+            Assert.Equal("Avalonia.Controls.Border", roundTrippedNodeSelector.Node.TypeName);
 
             var roundTrippedBackground = Assert.IsType<ResourceValue>(roundTripped.Root.Properties["Background"]);
             Assert.Equal("BackgroundBrush", roundTrippedBackground.Key);
@@ -102,6 +144,8 @@ namespace ArxisStudio.Markup.Json.Generator.Tests
             Assert.Contains(@"""$binding"": ""UserName""", serialized);
             Assert.Contains(@"""$asset"": {", serialized);
             Assert.Contains(@"""Assembly"": ""Sample.Assembly""", serialized);
+            Assert.Contains(@"""$styleInclude"": ""avares://Sample.Assembly/Styles/ProfileView.axaml""", serialized);
+            Assert.Contains(@"""$mergedDictionaries"": [", serialized);
         }
 
         [Fact]

@@ -79,7 +79,11 @@ public static class ArxuiSerializer
             ? ReadProperties(propertiesToken)
             : new Dictionary<string, UiValue>();
 
-        return new UiNode(typeName, properties);
+        return new UiNode(
+            typeName,
+            properties,
+            ReadStyles(nodeObject["Styles"] as JArray),
+            ReadResources(nodeObject["Resources"] as JObject));
     }
 
     private static IReadOnlyDictionary<string, UiValue> ReadProperties(JObject propertiesObject)
@@ -166,7 +170,92 @@ public static class ArxuiSerializer
             nestedProperties[property.Name] = ReadValue(property.Value);
         }
 
-        return new NodeValue(new UiNode("System.Object", nestedProperties));
+        return new NodeValue(new UiNode(
+            "System.Object",
+            nestedProperties,
+            ReadStyles(obj["Styles"] as JArray),
+            ReadResources(obj["Resources"] as JObject)));
+    }
+
+    private static UiStyles? ReadStyles(JArray? stylesArray)
+    {
+        if (stylesArray == null)
+        {
+            return null;
+        }
+
+        var items = new List<UiStyleValue>(stylesArray.Count);
+        foreach (var token in stylesArray)
+        {
+            switch (token)
+            {
+                case JObject obj when obj.TryGetValue("$styleInclude", out var includeToken):
+                {
+                    var source = includeToken.Type == JTokenType.Object
+                        ? includeToken["Source"]?.ToString()
+                        : includeToken.ToString();
+
+                    if (!string.IsNullOrWhiteSpace(source))
+                    {
+                        items.Add(new StyleIncludeValue(source!));
+                    }
+
+                    break;
+                }
+                case JObject obj:
+                    items.Add(new StyleNodeValue(ReadNode(obj)));
+                    break;
+                default:
+                    throw new JsonSerializationException("Styles entries must be objects.");
+            }
+        }
+
+        return new UiStyles(items);
+    }
+
+    private static UiResources? ReadResources(JObject? resourcesObject)
+    {
+        if (resourcesObject == null)
+        {
+            return null;
+        }
+
+        var mergedDictionaries = new List<UiResourceDictionaryInclude>();
+        var values = new Dictionary<string, UiValue>(StringComparer.Ordinal);
+
+        foreach (var property in resourcesObject.Properties())
+        {
+            if (string.Equals(property.Name, "$mergedDictionaries", StringComparison.Ordinal))
+            {
+                if (property.Value is not JArray dictionariesArray)
+                {
+                    throw new JsonSerializationException("'$mergedDictionaries' must be an array.");
+                }
+
+                foreach (var dictionaryToken in dictionariesArray)
+                {
+                    string? source = dictionaryToken switch
+                    {
+                        JValue value when value.Type == JTokenType.String => value.ToString(),
+                        JObject obj => obj["Source"]?.ToString(),
+                        _ => null
+                    };
+
+                    if (string.IsNullOrWhiteSpace(source))
+                    {
+                        throw new JsonSerializationException("Merged dictionary entry must declare Source.");
+                    }
+
+                    mergedDictionaries.Add(new UiResourceDictionaryInclude(source!));
+                }
+
+                continue;
+            }
+
+            values[property.Name] = ReadValue(property.Value);
+        }
+
+        return new UiResources(mergedDictionaries, values);
     }
 
     private static RelativeSourceSpec? ReadRelativeSource(JObject? obj)
@@ -197,11 +286,23 @@ public static class ArxuiSerializer
             properties[property.Key] = WriteValue(property.Value);
         }
 
-        return new JObject
+        var obj = new JObject
         {
             ["TypeName"] = node.TypeName,
             ["Properties"] = properties
         };
+
+        if (node.Styles != null)
+        {
+            obj["Styles"] = WriteStyles(node.Styles);
+        }
+
+        if (node.Resources != null)
+        {
+            obj["Resources"] = WriteResources(node.Resources);
+        }
+
+        return obj;
     }
 
     private static JToken WriteValue(UiValue value)
@@ -275,6 +376,55 @@ public static class ArxuiSerializer
                 ["Assembly"] = reference.Assembly
             }
         };
+    }
+
+    private static JArray WriteStyles(UiStyles styles)
+    {
+        var array = new JArray();
+        foreach (var item in styles.Items)
+        {
+            switch (item)
+            {
+                case StyleIncludeValue include:
+                    array.Add(new JObject
+                    {
+                        ["$styleInclude"] = include.Source
+                    });
+                    break;
+                case StyleNodeValue node:
+                    array.Add(WriteNode(node.Node));
+                    break;
+                default:
+                    throw new JsonSerializationException($"Unsupported style entry type '{item.GetType().Name}'.");
+            }
+        }
+
+        return array;
+    }
+
+    private static JObject WriteResources(UiResources resources)
+    {
+        var obj = new JObject();
+        if (resources.MergedDictionaries.Count > 0)
+        {
+            var mergedDictionaries = new JArray();
+            foreach (var include in resources.MergedDictionaries)
+            {
+                mergedDictionaries.Add(new JObject
+                {
+                    ["Source"] = include.Source
+                });
+            }
+
+            obj["$mergedDictionaries"] = mergedDictionaries;
+        }
+
+        foreach (var value in resources.Values)
+        {
+            obj[value.Key] = WriteValue(value.Value);
+        }
+
+        return obj;
     }
 
     private static void WriteOptional(JObject obj, string propertyName, object? value)
