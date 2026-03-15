@@ -33,11 +33,11 @@ namespace ArxisStudio.Editor.Services
                                    ?? "Root Document";
             
             // Рекурсивно строим дерево, начиная со свойств окна
-            BuildTreeRecursive(propertiesObject, rootNode.Children);
+            BuildTreeRecursive(propertiesObject, rootNode.Children, "");
             return rootNode;
         }
 
-        private static void BuildTreeRecursive(JObject parentJsonProperties, ObservableCollection<ControlNode> children)
+        private static void BuildTreeRecursive(JObject parentJsonProperties, ObservableCollection<ControlNode> children, string parentPath)
         {
             foreach (var property in parentJsonProperties.Properties())
             {
@@ -47,37 +47,42 @@ namespace ArxisStudio.Editor.Services
                 // 1. Обработка коллекций (Children, Items)
                 if (CollectionProperties.Contains(propName) && propValue is JArray jArray)
                 {
-                    // Создаем узел для самой коллекции (e.g., "Children [3]")
-                    var collectionNode = new ControlNode(parentJsonProperties, parentJsonProperties, propName);
-                    collectionNode.DisplayName = $"{propName} [{jArray.Count}]";
-                    children.Add(collectionNode);
-                    
+                    var collectionPath = AppendPath(parentPath, propName);
+
                     // Обрабатываем элементы внутри коллекции
+                    var index = 0;
                     foreach (var token in jArray.OfType<JObject>())
                     {
-                        var childNode = new ControlNode(token, jArray, propName);
-                        collectionNode.Children.Add(childNode);
+                        var childNode = new ControlNode(token, jArray, propName, $"{collectionPath}[{index}]");
+                        children.Add(childNode);
                         
                         // Рекурсия для вложенного контрола
                         if (token.TryGetValue("Properties", out JToken? nestedProperties) && nestedProperties is JObject nestedPropertiesObject)
                         {
-                            BuildTreeRecursive(nestedPropertiesObject, childNode.Children);
+                            BuildTreeRecursive(nestedPropertiesObject, childNode.Children, childNode.NodePath);
                         }
+
+                        index++;
                     }
                 }
                 // 2. Обработка одиночных дочерних контролов (Content, Child)
                 else if (ContentProperties.Contains(propName) && propValue is JObject jObject)
                 {
-                    var childNode = new ControlNode(jObject, parentJsonProperties, propName);
+                    var childNode = new ControlNode(jObject, parentJsonProperties, propName, AppendPath(parentPath, propName));
                     children.Add(childNode);
 
                     // Рекурсия для вложенного контрола
                     if (jObject.TryGetValue("Properties", out JToken? nestedProperties) && nestedProperties is JObject nestedPropertiesObject)
                     {
-                        BuildTreeRecursive(nestedPropertiesObject, childNode.Children);
+                        BuildTreeRecursive(nestedPropertiesObject, childNode.Children, childNode.NodePath);
                     }
                 }
             }
+        }
+
+        private static string AppendPath(string parentPath, string segment)
+        {
+            return string.IsNullOrWhiteSpace(parentPath) ? segment : $"{parentPath}/{segment}";
         }
     }
 }

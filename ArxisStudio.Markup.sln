@@ -12,6 +12,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ArxisStudio.Editor", "Arxis
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ArxisStudio.Template", "ArxisStudio.Template\ArxisStudio.Markup.Template.csproj", "{8A6B5D0E-0E19-4F42-84C9-B06B98F508A5}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ArxisStudio.Designer", "ArxisStudio.Designer\ArxisStudio.Designer.csproj", "{B31B1B77-CCB9-4C66-A571-A00D29A3F001}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -42,5 +44,9 @@ Global
 		{8A6B5D0E-0E19-4F42-84C9-B06B98F508A5}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8A6B5D0E-0E19-4F42-84C9-B06B98F508A5}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8A6B5D0E-0E19-4F42-84C9-B06B98F508A5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B31B1B77-CCB9-4C66-A571-A00D29A3F001}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B31B1B77-CCB9-4C66-A571-A00D29A3F001}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B31B1B77-CCB9-4C66-A571-A00D29A3F001}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B31B1B77-CCB9-4C66-A571-A00D29A3F001}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

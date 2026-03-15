@@ -29,5 +29,6 @@
 
     <ItemGroup>
         <ProjectReference Include="..\ArxisStudio.Contracts\ArxisStudio.Markup.Json.csproj" />
+        <ProjectReference Include="..\ArxisStudio.Designer\ArxisStudio.Designer.csproj" />
     </ItemGroup>
 </Project>

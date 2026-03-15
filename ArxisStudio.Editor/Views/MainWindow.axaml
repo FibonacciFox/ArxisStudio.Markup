@@ -2,6 +2,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:ArxisStudio.Editor.ViewModels"
         xmlns:m="using:ArxisStudio.Editor.Models"
+        xmlns:designer="using:ArxisStudio.Designer.Controls"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:j="using:Newtonsoft.Json.Linq"
@@ -395,9 +396,10 @@
                                                     <Border.RenderTransform>
                                                         <ScaleTransform ScaleX="{Binding PreviewZoom}" ScaleY="{Binding PreviewZoom}" />
                                                     </Border.RenderTransform>
-                                                    <ContentControl Content="{Binding RenderedContent}"
-                                                                    HorizontalContentAlignment="Center"
-                                                                    VerticalContentAlignment="Center" />
+                                                    <designer:DesignerSurfaceControl Document="{Binding CurrentDocument}"
+                                                                                     Zoom="{Binding PreviewZoom}"
+                                                                                     PreviewBuilder="{Binding DesignerPreviewBuilder}"
+                                                                                     SelectionService="{Binding DesignerSelectionService}" />
                                                 </Border>
                                             </Grid>
                                         </ScrollViewer>
@@ -541,9 +543,10 @@
                                                         <Border.RenderTransform>
                                                             <ScaleTransform ScaleX="{Binding PreviewZoom}" ScaleY="{Binding PreviewZoom}" />
                                                         </Border.RenderTransform>
-                                                        <ContentControl Content="{Binding RenderedContent}"
-                                                                        HorizontalContentAlignment="Center"
-                                                                        VerticalContentAlignment="Center" />
+                                                        <designer:DesignerSurfaceControl Document="{Binding CurrentDocument}"
+                                                                                         Zoom="{Binding PreviewZoom}"
+                                                                                         PreviewBuilder="{Binding DesignerPreviewBuilder}"
+                                                                                         SelectionService="{Binding DesignerSelectionService}" />
                                                     </Border>
                                                 </Grid>
                                             </ScrollViewer>

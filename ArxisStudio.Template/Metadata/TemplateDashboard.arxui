@@ -5,18 +5,28 @@
     "TypeName": "Avalonia.Controls.UserControl",
     "Properties": {
       "Background": "#0A0F14",
+      "HorizontalAlignment": "Stretch",
+      "VerticalAlignment": "Stretch",
       "Content": {
         "TypeName": "Avalonia.Controls.ScrollViewer",
         "Properties": {
+          "HorizontalAlignment": "Stretch",
+          "VerticalAlignment": "Stretch",
           "Padding": "28",
+          "HorizontalScrollBarVisibility": "Disabled",
+          "VerticalScrollBarVisibility": "Auto",
           "Content": {
             "TypeName": "Avalonia.Controls.StackPanel",
             "Properties": {
+              "HorizontalAlignment": "Stretch",
+              "VerticalAlignment": "Top",
+              "MaxWidth": 920,
               "Spacing": 20,
               "Children": [
                 {
                   "TypeName": "Avalonia.Controls.Border",
                   "Properties": {
+                    "HorizontalAlignment": "Stretch",
                     "Background": {
                       "$resource": "LocalCardBrush"
                     },
@@ -24,16 +34,18 @@
                       "$resource": "TemplateBorderBrush"
                     },
                     "BorderThickness": "1",
-                    "Padding": "28",
+                    "Padding": "24",
                     "Child": {
                       "TypeName": "Avalonia.Controls.StackPanel",
                       "Properties": {
+                        "HorizontalAlignment": "Stretch",
                         "Spacing": 14,
                         "Children": [
                           {
                             "TypeName": "Avalonia.Controls.TextBlock",
                             "Properties": {
                               "Classes": "eyebrow",
+                              "HorizontalAlignment": "Left",
                               "Text": "Шаблон ArxisStudio"
                             }
                           },
@@ -41,6 +53,9 @@
                             "TypeName": "Avalonia.Controls.TextBlock",
                             "Properties": {
                               "Classes": "hero-title",
+                              "HorizontalAlignment": "Left",
+                              "TextWrapping": "Wrap",
+                              "MaxWidth": 720,
                               "Text": "Проектируйте более выразительные Avalonia-экраны из .arxui"
                             }
                           },
@@ -48,7 +63,9 @@
                             "TypeName": "Avalonia.Controls.TextBlock",
                             "Properties": {
                               "Classes": "hero-copy",
+                              "HorizontalAlignment": "Left",
                               "TextWrapping": "Wrap",
+                              "MaxWidth": 760,
                               "Text": "Этот шаблонный проект предназначен для открытия в ArxisStudio.Editor и для запуска как обычного приложения.\nОн демонстрирует загрузку проекта, внешние стили, merged resource dictionaries и более реалистичную dashboard-композицию."
                             }
                           },
@@ -56,12 +73,15 @@
                             "TypeName": "Avalonia.Controls.StackPanel",
                             "Properties": {
                               "Orientation": "Horizontal",
+                              "HorizontalAlignment": "Left",
                               "Spacing": 12,
                               "Children": [
                                 {
                                   "TypeName": "Avalonia.Controls.Button",
                                   "Properties": {
                                     "Classes": "primary-action",
+                                    "MinWidth": 180,
+                                    "HorizontalAlignment": "Left",
                                     "Content": "Открыть в дизайнере"
                                   },
                                   "$design": {
@@ -74,7 +94,23 @@
                                   "TypeName": "Avalonia.Controls.Button",
                                   "Properties": {
                                     "Classes": "secondary-action",
+                                    "MinWidth": 160,
+                                    "HorizontalAlignment": "Left",
                                     "Content": "Просмотреть JSON"
+                                  },
+                                  "$design": {
+                                    "IgnorePreviewInput": true,
+                                    "AllowMove": true,
+                                    "AllowResize": false
+                                  }
+                                },
+                                {
+                                  "TypeName": "Avalonia.Controls.Button",
+                                  "Properties": {
+                                    "Classes": "secondary-action",
+                                    "MinWidth": 170,
+                                    "HorizontalAlignment": "Left",
+                                    "Content": "Просмотреть preview"
                                   },
                                   "$design": {
                                     "IgnorePreviewInput": true,
@@ -100,12 +136,14 @@
                   "TypeName": "Avalonia.Controls.StackPanel",
                   "Properties": {
                     "Orientation": "Horizontal",
+                    "HorizontalAlignment": "Stretch",
                     "Spacing": 18,
                     "Children": [
                       {
                         "TypeName": "Avalonia.Controls.Border",
                         "Properties": {
                           "Width": 180,
+                          "MinHeight": 96,
                           "Padding": "18",
                           "Background": {
                             "$resource": "TemplatePanelBrush"
@@ -117,12 +155,14 @@
                           "Child": {
                             "TypeName": "Avalonia.Controls.StackPanel",
                             "Properties": {
+                              "HorizontalAlignment": "Left",
                               "Spacing": 6,
                               "Children": [
                                 {
                                   "TypeName": "Avalonia.Controls.TextBlock",
                                   "Properties": {
                                     "Classes": "metric-value",
+                                    "HorizontalAlignment": "Left",
                                     "Text": "12"
                                   }
                                 },
@@ -130,6 +170,8 @@
                                   "TypeName": "Avalonia.Controls.TextBlock",
                                   "Properties": {
                                     "Classes": "metric-label",
+                                    "HorizontalAlignment": "Left",
+                                    "TextWrapping": "Wrap",
                                     "Text": ".arxui документов"
                                   }
                                 }
@@ -147,6 +189,7 @@
                         "TypeName": "Avalonia.Controls.Border",
                         "Properties": {
                           "Width": 180,
+                          "MinHeight": 96,
                           "Padding": "18",
                           "Background": {
                             "$resource": "TemplatePanelBrush"
@@ -158,12 +201,14 @@
                           "Child": {
                             "TypeName": "Avalonia.Controls.StackPanel",
                             "Properties": {
+                              "HorizontalAlignment": "Left",
                               "Spacing": 6,
                               "Children": [
                                 {
                                   "TypeName": "Avalonia.Controls.TextBlock",
                                   "Properties": {
                                     "Classes": "metric-value",
+                                    "HorizontalAlignment": "Left",
                                     "Text": "4"
                                   }
                                 },
@@ -171,6 +216,8 @@
                                   "TypeName": "Avalonia.Controls.TextBlock",
                                   "Properties": {
                                     "Classes": "metric-label",
+                                    "HorizontalAlignment": "Left",
+                                    "TextWrapping": "Wrap",
                                     "Text": "подключённых .axaml файлов"
                                   }
                                 }
@@ -188,6 +235,7 @@
                         "TypeName": "Avalonia.Controls.Border",
                         "Properties": {
                           "Width": 180,
+                          "MinHeight": 96,
                           "Padding": "18",
                           "Background": {
                             "$resource": "TemplatePanelBrush"
@@ -199,12 +247,14 @@
                           "Child": {
                             "TypeName": "Avalonia.Controls.StackPanel",
                             "Properties": {
+                              "HorizontalAlignment": "Left",
                               "Spacing": 6,
                               "Children": [
                                 {
                                   "TypeName": "Avalonia.Controls.TextBlock",
                                   "Properties": {
                                     "Classes": "metric-value",
+                                    "HorizontalAlignment": "Left",
                                     "Text": "0"
                                   }
                                 },
@@ -212,6 +262,8 @@
                                   "TypeName": "Avalonia.Controls.TextBlock",
                                   "Properties": {
                                     "Classes": "metric-label",
+                                    "HorizontalAlignment": "Left",
+                                    "TextWrapping": "Wrap",
                                     "Text": "выполнено строк runtime-кода"
                                   }
                                 }
@@ -232,12 +284,14 @@
                   "TypeName": "Avalonia.Controls.StackPanel",
                   "Properties": {
                     "Orientation": "Horizontal",
+                    "HorizontalAlignment": "Stretch",
                     "Spacing": 18,
                     "Children": [
                       {
                         "TypeName": "Avalonia.Controls.Border",
                         "Properties": {
                           "Width": 280,
+                          "MinHeight": 156,
                           "Padding": "18",
                           "Background": {
                             "$resource": "TemplatePanelAltBrush"
@@ -249,12 +303,14 @@
                           "Child": {
                             "TypeName": "Avalonia.Controls.StackPanel",
                             "Properties": {
+                              "HorizontalAlignment": "Left",
                               "Spacing": 8,
                               "Children": [
                                 {
                                   "TypeName": "Avalonia.Controls.TextBlock",
                                   "Properties": {
                                     "Classes": "card-title",
+                                    "HorizontalAlignment": "Left",
                                     "Text": "Preview с учётом проекта"
                                   }
                                 },
@@ -262,6 +318,7 @@
                                   "TypeName": "Avalonia.Controls.TextBlock",
                                   "Properties": {
                                     "Classes": "card-copy",
+                                    "HorizontalAlignment": "Left",
                                     "TextWrapping": "Wrap",
                                     "Text": "Редактор читает открытый проект, находит .arxui документы и применяет локальные стили и merged resources прямо во время preview."
                                   }
@@ -280,6 +337,7 @@
                         "TypeName": "Avalonia.Controls.Border",
                         "Properties": {
                           "Width": 280,
+                          "MinHeight": 156,
                           "Padding": "18",
                           "Background": {
                             "$resource": "TemplatePanelAltBrush"
@@ -291,12 +349,14 @@
                           "Child": {
                             "TypeName": "Avalonia.Controls.StackPanel",
                             "Properties": {
+                              "HorizontalAlignment": "Left",
                               "Spacing": 8,
                               "Children": [
                                 {
                                   "TypeName": "Avalonia.Controls.TextBlock",
                                   "Properties": {
                                     "Classes": "card-title",
+                                    "HorizontalAlignment": "Left",
                                     "Text": "Безопасный design mode"
                                   }
                                 },
@@ -304,6 +364,7 @@
                                   "TypeName": "Avalonia.Controls.TextBlock",
                                   "Properties": {
                                     "Classes": "card-copy",
+                                    "HorizontalAlignment": "Left",
                                     "TextWrapping": "Wrap",
                                     "Text": "Preview использует декларативную модель и ресурсы проекта без выполнения пользовательских обработчиков событий и application startup logic."
                                   }
@@ -322,6 +383,7 @@
                         "TypeName": "Avalonia.Controls.Border",
                         "Properties": {
                           "Width": 280,
+                          "MinHeight": 156,
                           "Padding": "18",
                           "Background": {
                             "$resource": "TemplatePanelAltBrush"
@@ -333,12 +395,14 @@
                           "Child": {
                             "TypeName": "Avalonia.Controls.StackPanel",
                             "Properties": {
+                              "HorizontalAlignment": "Left",
                               "Spacing": 8,
                               "Children": [
                                 {
                                   "TypeName": "Avalonia.Controls.TextBlock",
                                   "Properties": {
                                     "Classes": "card-title",
+                                    "HorizontalAlignment": "Left",
                                     "Text": "Расширяемая модель"
                                   }
                                 },
@@ -346,6 +410,7 @@
                                   "TypeName": "Avalonia.Controls.TextBlock",
                                   "Properties": {
                                     "Classes": "card-copy",
+                                    "HorizontalAlignment": "Left",
                                     "TextWrapping": "Wrap",
                                     "Text": "Layout, ресурсы и стили остаются data-driven, благодаря чему конструктор остаётся универсальным и не завязан на жёстко заданный каталог виджетов."
                                   }

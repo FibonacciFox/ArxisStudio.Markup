@@ -8,10 +8,13 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Collections.Generic;
 using Newtonsoft.Json.Linq;
 using System.Collections.ObjectModel;
 using ArxisStudio.Editor.Models;
 using System.Threading.Tasks;
+using ArxisStudio.Designer.Abstractions;
+using ArxisStudio.Designer.Services;
 
 namespace ArxisStudio.Editor.ViewModels
 {
@@ -19,8 +22,11 @@ namespace ArxisStudio.Editor.ViewModels
     {
         private readonly ProjectDiscoveryService _projectDiscoveryService = new();
         private bool _suppressJsonTextChanged;
+        private bool _selectionSyncInProgress;
         private string? _currentDocumentPath;
         private Process? _runningProcess;
+        private Dictionary<string, UiNode> _uiNodesByPath = new();
+        private Dictionary<string, ControlNode> _controlNodesByPath = new();
 
         [ObservableProperty]
         private string _jsonText = "";
@@ -75,6 +81,9 @@ namespace ArxisStudio.Editor.ViewModels
         [ObservableProperty]
         private double _previewSurfaceHeight = 800;
 
+        [ObservableProperty]
+        private UiDocument? _currentDocument;
+
         public bool IsDesignerMode => WorkspaceMode == "Designer";
 
         public bool IsSourceMode => WorkspaceMode == "Source";
@@ -86,6 +95,10 @@ namespace ArxisStudio.Editor.ViewModels
         public bool CanRunProject => !IsProjectRunning && !string.IsNullOrWhiteSpace(ProjectPathInput);
 
         public bool CanStopProject => IsProjectRunning;
+
+        public IDesignerPreviewBuilder DesignerPreviewBuilder { get; } = new EditorDesignerPreviewBuilder();
+
+        public IDesignerSelectionService DesignerSelectionService { get; } = new DesignerSelectionService();
 
         public ObservableCollection<ProjectFileItem> ProjectArxuiFiles { get; } = new();
 
@@ -183,6 +196,7 @@ namespace ArxisStudio.Editor.ViewModels
   }
 }";
             DesignerService.Instance.JsonChanged += OnJsonChanged;
+            DesignerSelectionService.SelectedNodeChanged += OnDesignerSelectionChanged;
             UpdateTreeAndUIFromText();
         }
 
@@ -204,6 +218,7 @@ namespace ArxisStudio.Editor.ViewModels
         partial void OnSelectedNodeChanged(ControlNode? oldValue, ControlNode? newValue)
         {
             LoadProperties(newValue);
+            SyncPreviewSelectionFromOutline(newValue);
             // Явно оповещаем команду об изменении SelectedNode
             DeleteSelectedControlCommand.NotifyCanExecuteChanged(); 
         }
@@ -215,6 +230,11 @@ namespace ArxisStudio.Editor.ViewModels
 
         partial void OnLoadedProjectChanged(ProjectContext? value)
         {
+            if (DesignerPreviewBuilder is EditorDesignerPreviewBuilder builder)
+            {
+                builder.ProjectContext = value;
+            }
+
             RunProjectCommand.NotifyCanExecuteChanged();
         }
 
@@ -274,6 +294,7 @@ namespace ArxisStudio.Editor.ViewModels
             {
                 ErrorMessage = $"JSON Parse Error: {ex.Message}";
                 ControlTreeRoot = null;
+                CurrentDocument = null;
             }
         }
 
@@ -293,6 +314,8 @@ namespace ArxisStudio.Editor.ViewModels
 
                 PreviewSurfaceWidth = rootModel.Design?.SurfaceWidth ?? 1280;
                 PreviewSurfaceHeight = rootModel.Design?.SurfaceHeight ?? 800;
+                CurrentDocument = rootModel;
+                _uiNodesByPath = BuildUiNodeIndex(rootModel.Root);
 
                 // 2. Обновляем JsonText (СИНХРОНИЗАЦИЯ)
                 _suppressJsonTextChanged = true;
@@ -319,6 +342,7 @@ namespace ArxisStudio.Editor.ViewModels
 
                 // 4. ПЕРЕСТРАИВАЕМ ДЕРЕВО: Это создает НОВЫЕ ControlNode объекты
                 ControlTreeRoot = TreeBuilder.BuildTree(rootJson);
+                _controlNodesByPath = BuildControlNodeIndex(ControlTreeRoot);
                 
                 // 5. ВОССТАНОВЛЕНИЕ: Ищем предыдущий выделенный JSON-объект в новом дереве
                 if (selectedJson != null)
@@ -387,6 +411,140 @@ namespace ArxisStudio.Editor.ViewModels
                     }
                 }
             }
+        }
+
+        private void OnDesignerSelectionChanged(object? sender, UiNode? node)
+        {
+            if (_selectionSyncInProgress)
+            {
+                return;
+            }
+
+            try
+            {
+                _selectionSyncInProgress = true;
+
+                if (node == null)
+                {
+                    SelectedNode = null;
+                    return;
+                }
+
+                var path = FindUiNodePath(node);
+                if (path != null && _controlNodesByPath.TryGetValue(path, out var controlNode))
+                {
+                    SelectedNode = controlNode;
+                }
+            }
+            finally
+            {
+                _selectionSyncInProgress = false;
+            }
+        }
+
+        private void SyncPreviewSelectionFromOutline(ControlNode? node)
+        {
+            if (_selectionSyncInProgress)
+            {
+                return;
+            }
+
+            try
+            {
+                _selectionSyncInProgress = true;
+
+                if (node == null)
+                {
+                    DesignerSelectionService.Select(null);
+                    return;
+                }
+
+                if (_uiNodesByPath.TryGetValue(node.NodePath, out var uiNode))
+                {
+                    DesignerSelectionService.Select(uiNode);
+                }
+                else
+                {
+                    DesignerSelectionService.Select(null);
+                }
+            }
+            finally
+            {
+                _selectionSyncInProgress = false;
+            }
+        }
+
+        private string? FindUiNodePath(UiNode target)
+        {
+            foreach (var pair in _uiNodesByPath)
+            {
+                if (ReferenceEquals(pair.Value, target))
+                {
+                    return pair.Key;
+                }
+            }
+
+            return null;
+        }
+
+        private static Dictionary<string, UiNode> BuildUiNodeIndex(UiNode root)
+        {
+            var index = new Dictionary<string, UiNode>();
+            VisitUiNode(root, "", index);
+            return index;
+        }
+
+        private static void VisitUiNode(UiNode node, string currentPath, IDictionary<string, UiNode> index)
+        {
+            index[currentPath] = node;
+
+            foreach (var property in node.Properties)
+            {
+                if (property.Value is NodeValue nodeValue)
+                {
+                    VisitUiNode(nodeValue.Node, AppendPath(currentPath, property.Key), index);
+                }
+                else if (property.Value is CollectionValue collectionValue)
+                {
+                    for (var i = 0; i < collectionValue.Items.Count; i++)
+                    {
+                        if (collectionValue.Items[i] is NodeValue collectionNodeValue)
+                        {
+                            VisitUiNode(collectionNodeValue.Node, $"{AppendPath(currentPath, property.Key)}[{i}]", index);
+                        }
+                    }
+                }
+            }
+        }
+
+        private static Dictionary<string, ControlNode> BuildControlNodeIndex(ControlNode? root)
+        {
+            var index = new Dictionary<string, ControlNode>();
+            if (root == null)
+            {
+                return index;
+            }
+
+            VisitControlNode(root, index);
+            return index;
+        }
+
+        private static void VisitControlNode(ControlNode node, IDictionary<string, ControlNode> index)
+        {
+            if (!string.IsNullOrWhiteSpace(node.NodePath) && node.JsonNode["TypeName"] != null)
+            {
+                index[node.NodePath] = node;
+            }
+
+            foreach (var child in node.Children)
+            {
+                VisitControlNode(child, index);
+            }
+        }
+
+        private static string AppendPath(string parentPath, string segment)
+        {
+            return string.IsNullOrWhiteSpace(parentPath) ? segment : $"{parentPath}/{segment}";
         }
         
         // --- Команды конструктора ---

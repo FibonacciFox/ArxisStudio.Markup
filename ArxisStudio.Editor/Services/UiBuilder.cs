@@ -19,7 +19,10 @@ namespace ArxisStudio.Editor.Services
     {
         private static readonly Dictionary<string, Type> TypeCache = new();
 
-        public static Control Build(UiNode node, ProjectContext? projectContext = null)
+        public static Control Build(
+            UiNode node,
+            ProjectContext? projectContext = null,
+            IDictionary<UiNode, Control>? nodeMap = null)
         {
             if (string.IsNullOrWhiteSpace(node.TypeName))
             {
@@ -33,6 +36,10 @@ namespace ArxisStudio.Editor.Services
             }
 
             var control = (Control)Activator.CreateInstance(controlType)!;
+            if (nodeMap != null)
+            {
+                nodeMap[node] = control;
+            }
             var resourceScope = new Dictionary<string, object?>(StringComparer.Ordinal);
 
             ApplyDesignMetadata(control, node.Design);
@@ -42,7 +49,7 @@ namespace ArxisStudio.Editor.Services
 
             foreach (var property in node.Properties)
             {
-                ApplyProperty(control, property.Key, property.Value, resourceScope, projectContext);
+                ApplyProperty(control, property.Key, property.Value, resourceScope, projectContext, nodeMap);
             }
 
             return control;
@@ -71,7 +78,8 @@ namespace ArxisStudio.Editor.Services
             string propertyName,
             UiValue value,
             IDictionary<string, object?> resourceScope,
-            ProjectContext? projectContext)
+            ProjectContext? projectContext,
+            IDictionary<UiNode, Control>? nodeMap)
         {
             try
             {
@@ -89,13 +97,13 @@ namespace ArxisStudio.Editor.Services
 
                 if (value is CollectionValue collectionValue)
                 {
-                    ApplyCollectionProperty(control, propertyName, collectionValue.Items, resourceScope, projectContext);
+                    ApplyCollectionProperty(control, propertyName, collectionValue.Items, resourceScope, projectContext, nodeMap);
                     return;
                 }
 
                 if (value is NodeValue nodeValue)
                 {
-                    var complexObject = CreateComplexObject(nodeValue.Node, resourceScope, projectContext);
+                    var complexObject = CreateComplexObject(nodeValue.Node, resourceScope, projectContext, nodeMap);
                     if (complexObject != null)
                     {
                         SetComplexProperty(control, propertyName, complexObject);
@@ -195,7 +203,8 @@ namespace ArxisStudio.Editor.Services
             string propertyName,
             IReadOnlyCollection<UiValue> items,
             IDictionary<string, object?> resourceScope,
-            ProjectContext? projectContext)
+            ProjectContext? projectContext,
+            IDictionary<UiNode, Control>? nodeMap)
         {
             var collectionProperty = parentObject.GetType().GetProperty(propertyName);
             if (collectionProperty == null)
@@ -222,7 +231,7 @@ namespace ArxisStudio.Editor.Services
 
                 if (item is NodeValue nodeItem)
                 {
-                    builtItem = CreateComplexObject(nodeItem.Node, resourceScope, projectContext);
+                    builtItem = CreateComplexObject(nodeItem.Node, resourceScope, projectContext, nodeMap);
                 }
                 else if (item is ScalarValue scalar && scalar.Value != null)
                 {
@@ -239,7 +248,8 @@ namespace ArxisStudio.Editor.Services
         private static object? CreateComplexObject(
             UiNode node,
             IDictionary<string, object?> inheritedResources,
-            ProjectContext? projectContext)
+            ProjectContext? projectContext,
+            IDictionary<UiNode, Control>? nodeMap)
         {
             var resolvedType = FindType(node.TypeName);
             if (resolvedType == null)
@@ -249,7 +259,7 @@ namespace ArxisStudio.Editor.Services
 
             if (typeof(Control).IsAssignableFrom(resolvedType))
             {
-                return Build(node, projectContext);
+                return Build(node, projectContext, nodeMap);
             }
 
             var complexObject = Activator.CreateInstance(resolvedType);
@@ -265,7 +275,7 @@ namespace ArxisStudio.Editor.Services
             {
                 if (nestedProperty.Value is CollectionValue collectionValue)
                 {
-                    ApplyCollectionProperty(complexObject, nestedProperty.Key, collectionValue.Items, localScope, projectContext);
+                    ApplyCollectionProperty(complexObject, nestedProperty.Key, collectionValue.Items, localScope, projectContext, nodeMap);
                     continue;
                 }
 
@@ -403,7 +413,7 @@ namespace ArxisStudio.Editor.Services
             return value switch
             {
                 ScalarValue { Value: not null } scalar => scalar.Value,
-                NodeValue node => CreateComplexObject(node.Node, resourceScope, projectContext),
+                NodeValue node => CreateComplexObject(node.Node, resourceScope, projectContext, nodeMap: null),
                 ResourceValue resource => resourceScope.TryGetValue(resource.Key, out var resourceValue) ? resourceValue : null,
                 UriReferenceValue asset => CreateAssetValue(asset, typeof(IImage), projectContext),
                 _ => null
@@ -433,7 +443,7 @@ namespace ArxisStudio.Editor.Services
                     }
                     case StyleNodeValue nodeValue:
                     {
-                        var styleObject = CreateComplexObject(nodeValue.Node, new Dictionary<string, object?>(StringComparer.Ordinal), projectContext);
+                        var styleObject = CreateComplexObject(nodeValue.Node, new Dictionary<string, object?>(StringComparer.Ordinal), projectContext, nodeMap: null);
                         if (styleObject is IStyle style)
                         {
                             control.Styles.Add(style);
