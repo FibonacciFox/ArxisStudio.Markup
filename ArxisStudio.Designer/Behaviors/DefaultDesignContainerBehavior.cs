@@ -35,4 +35,28 @@ public sealed class DefaultDesignContainerBehavior : IDesignContainerBehavior
 
     /// <inheritdoc />
     public DesignerDropTarget? HitTestDropTarget(DesignDropContext context) => null;
+
+    /// <inheritdoc />
+    public bool CanAcceptChild(UiNode containerNode, UiNode childNode)
+    {
+        return false;
+    }
+
+    /// <inheritdoc />
+    public bool TryCreatePlacementIntent(DesignPlacementContext context, out DesignPlacementIntent intent)
+    {
+        intent = new DesignPlacementIntent(DesignPlacementKind.InsertChild, "Children");
+        return false;
+    }
+
+    /// <inheritdoc />
+    public DesignPlacementVisualHint? BuildPlacementVisualHint(DesignPlacementContext context, DesignPlacementIntent intent)
+    {
+        return null;
+    }
+
+    /// <inheritdoc />
+    public void ApplyPlacement(DesignApplyPlacementContext context)
+    {
+    }
 }

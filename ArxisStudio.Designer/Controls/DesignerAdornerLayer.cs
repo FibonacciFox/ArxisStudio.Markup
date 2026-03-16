@@ -12,6 +12,7 @@ namespace ArxisStudio.Designer.Controls;
 public sealed class DesignerAdornerLayer : Control
 {
     private static readonly Pen SelectionPen = new(SolidColorBrush.Parse("#4EA1F3"), 1);
+    private static readonly Pen PlacementPen = new(SolidColorBrush.Parse("#61D095"), 1, dashStyle: new DashStyle(new[] { 4d, 3d }, 0));
     private static readonly IBrush HandleBrush = Brushes.White;
     private static readonly Size HandleSize = new(8, 8);
 
@@ -43,6 +44,20 @@ public sealed class DesignerAdornerLayer : Control
     }
     private UiNode? _selectedNode;
 
+    /// <summary>
+    /// Возвращает или задаёт подсказку размещения для drag-drop.
+    /// </summary>
+    public DesignPlacementVisualHint? PlacementHint
+    {
+        get => _placementHint;
+        set
+        {
+            _placementHint = value;
+            InvalidateVisual();
+        }
+    }
+    private DesignPlacementVisualHint? _placementHint;
+
     /// <inheritdoc />
     public override void Render(DrawingContext context)
     {
@@ -58,6 +73,16 @@ public sealed class DesignerAdornerLayer : Control
         foreach (var handle in GetHandleRects(bounds))
         {
             context.DrawRectangle(HandleBrush, SelectionPen, handle);
+        }
+
+        if (PlacementHint?.HighlightBounds is Rect highlightBounds)
+        {
+            context.DrawRectangle(null, PlacementPen, highlightBounds);
+        }
+
+        if (PlacementHint?.InsertionLineStart is Point start && PlacementHint.InsertionLineEnd is Point end)
+        {
+            context.DrawLine(PlacementPen, start, end);
         }
     }
 

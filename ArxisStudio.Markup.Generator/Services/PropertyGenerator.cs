@@ -15,6 +15,7 @@ namespace ArxisStudio.Markup.Generator.Services
         private readonly SourceProductionContext _context;
         private readonly string _assemblyName;
         private readonly string _fileName;
+        private int _generatedObjectCounter;
 
         internal PropertyGenerator(
             TypeResolver resolver, 
@@ -325,7 +326,7 @@ namespace ArxisStudio.Markup.Generator.Services
             }
             else
             {
-                assignedVarName = $"_gen_{propertyName}_{Guid.NewGuid().ToString("N").Substring(0, 4)}";
+                assignedVarName = $"_gen_{SanitizeIdentifier(propertyName)}_{_generatedObjectCounter++:D4}";
                 writer.WriteLine($"{fullTypeName} {assignedVarName} = new {fullTypeName}();");
             }
 

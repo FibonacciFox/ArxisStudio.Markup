@@ -1,5 +1,6 @@
 ﻿using ArxisStudio.Markup;
 using ArxisStudio.Markup.Json;
+using Avalonia;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -17,10 +18,12 @@ using System.Collections.ObjectModel;
 using ArxisStudio.Editor.Models;
 using System.Threading.Tasks;
 using ArxisStudio.Designer.Abstractions;
+using ArxisStudio.Designer.Models;
 using ArxisStudio.Designer.Services;
 using ArxisStudio.Markup.Json.Loader.Services;
 using ArxisStudio.Markup.Workspace.Models;
 using ArxisStudio.Markup.Workspace.Services;
+using ArxisStudio.Designer;
 
 namespace ArxisStudio.Editor.ViewModels
 {
@@ -31,6 +34,7 @@ namespace ArxisStudio.Editor.ViewModels
         private readonly ArxuiSemanticValidator _semanticValidator = new();
         private bool _suppressJsonTextChanged;
         private bool _selectionSyncInProgress;
+        private bool _suppressTabSelectionChanged;
         private string? _currentDocumentPath;
         private Process? _runningProcess;
         private Dictionary<string, UiNode> _uiNodesByPath = new();
@@ -70,6 +74,12 @@ namespace ArxisStudio.Editor.ViewModels
 
         [ObservableProperty]
         private ProjectFileItem? _selectedProjectFile;
+
+        [ObservableProperty]
+        private ProjectTreeItem? _selectedProjectTreeItem;
+
+        [ObservableProperty]
+        private OpenDocumentTab? _selectedOpenDocumentTab;
 
         [ObservableProperty]
         private string _workspaceMode = "Designer";
@@ -113,7 +123,14 @@ namespace ArxisStudio.Editor.ViewModels
 
         public ObservableCollection<ProjectFileItem> ProjectArxuiFiles { get; } = new();
 
+        public ObservableCollection<ProjectTreeItem> ProjectTreeItems { get; } = new();
+
+        public ObservableCollection<OpenDocumentTab> OpenDocumentTabs { get; } = new();
+
         public ObservableCollection<ToolboxItem> AvailableControls { get; } = new();
+
+        public ObservableCollection<DesignEditorItem> DesignerItems { get; } = new();
+        public ObservableCollection<DesignEditorItem> SplitDesignerItems { get; } = new();
 
         public MainWindowViewModel()
         {
@@ -148,6 +165,38 @@ namespace ArxisStudio.Editor.ViewModels
         partial void OnSelectedProjectFileChanged(ProjectFileItem? oldValue, ProjectFileItem? newValue)
         {
             OpenSelectedProjectFileCommand.NotifyCanExecuteChanged();
+        }
+
+        partial void OnSelectedProjectTreeItemChanged(ProjectTreeItem? oldValue, ProjectTreeItem? newValue)
+        {
+            if (newValue == null || newValue.IsDirectory || !newValue.FullPath.EndsWith(".arxui", StringComparison.OrdinalIgnoreCase))
+            {
+                SelectedProjectFile = null;
+                OpenSelectedProjectFileCommand.NotifyCanExecuteChanged();
+                return;
+            }
+
+            SelectedProjectFile = ProjectArxuiFiles.FirstOrDefault(file =>
+                string.Equals(file.FullPath, newValue.FullPath, StringComparison.OrdinalIgnoreCase));
+            OpenSelectedProjectFileCommand.NotifyCanExecuteChanged();
+        }
+
+        partial void OnSelectedOpenDocumentTabChanged(OpenDocumentTab? oldValue, OpenDocumentTab? newValue)
+        {
+            if (_suppressTabSelectionChanged || newValue == null)
+            {
+                return;
+            }
+
+            var file = ResolveArxuiFile(newValue.FullPath);
+            if (file == null)
+            {
+                return;
+            }
+
+            SelectedProjectFile = file;
+            SelectedProjectTreeItem = FindTreeItemByPath(file.FullPath, ProjectTreeItems);
+            OpenProjectFile(file, ensureTabSelection: false);
         }
 
         partial void OnLoadedProjectChanged(ProjectContext? value)
@@ -223,6 +272,8 @@ namespace ArxisStudio.Editor.ViewModels
                 ErrorMessage = $"JSON Parse Error: {ex.Message}";
                 ControlTreeRoot = null;
                 CurrentDocument = null;
+                DesignerItems.Clear();
+                SplitDesignerItems.Clear();
             }
         }
 
@@ -261,17 +312,12 @@ namespace ArxisStudio.Editor.ViewModels
                 }
 
                 // 3. Строим UI (Рендеринг)
-                var loader = new ArxuiLoader();
-                var loadContext = new ArxuiLoadContext
-                {
-                    TypeResolver = new ReflectionTypeResolver(),
-                    AssetResolver = new DefaultAssetResolver(),
-                    DocumentResolver = LoadedProject != null ? new ProjectMarkupDocumentResolver(LoadedProject.ArxuiFiles.Select(file => file.FullPath).ToList()) : null,
-                    PathResolver = LoadedProject != null ? new ProjectContextPathResolver(LoadedProject.ProjectDirectory, LoadedProject.AssemblyName) : null,
-                    TopLevelControlFactory = new DefaultTopLevelControlFactory(),
-                    Options = new ArxuiLoadOptions()
-                };
-                RenderedContent = loader.Load(rootModel.Root, loadContext);
+                var builder = DesignerPreviewBuilder as EditorDesignerPreviewBuilder;
+                var primaryScene = (builder ?? new EditorDesignerPreviewBuilder()).Build(rootModel, new DesignerSurfaceContext(PreviewZoom));
+                var splitScene = (builder ?? new EditorDesignerPreviewBuilder()).Build(rootModel, new DesignerSurfaceContext(PreviewZoom));
+
+                RenderedContent = primaryScene.RootControl;
+                RebuildDesignerItems(primaryScene.RootControl, splitScene.RootControl);
                 
                 if (!rebuildTree)
                 {
@@ -302,6 +348,43 @@ namespace ArxisStudio.Editor.ViewModels
             catch (Exception ex)
             {
                 ErrorMessage = $"Rendering Error: {ex.Message}";
+                DesignerItems.Clear();
+                SplitDesignerItems.Clear();
+            }
+        }
+
+        private void RebuildDesignerItems(Control? primaryPreview, Control? splitPreview)
+        {
+            DesignerItems.Clear();
+            SplitDesignerItems.Clear();
+
+            if (primaryPreview != null)
+            {
+                DesignerItems.Add(new DesignEditorItem
+                {
+                    Content = primaryPreview,
+                    Location = new Point(0, 0),
+                    Width = PreviewSurfaceWidth,
+                    Height = PreviewSurfaceHeight,
+                    IsDraggable = false
+                });
+            }
+
+            if (splitPreview != null)
+            {
+                SplitDesignerItems.Add(new DesignEditorItem
+                {
+                    Content = splitPreview,
+                    Location = new Point(0, 0),
+                    Width = PreviewSurfaceWidth,
+                    Height = PreviewSurfaceHeight,
+                    IsDraggable = false
+                });
+            }
+
+            if (DesignerItems.Count == 0 && SplitDesignerItems.Count == 0)
+            {
+                ErrorMessage = "Designer preview is empty: preview builder returned no visual root.";
             }
         }
 
@@ -552,6 +635,9 @@ namespace ArxisStudio.Editor.ViewModels
                 {
                     ProjectArxuiFiles.Add(file);
                 }
+                BuildProjectTree(project.ProjectDirectory);
+                OpenDocumentTabs.Clear();
+                SelectedOpenDocumentTab = null;
 
                 ProjectSummary =
                     $"Project: {Path.GetFileName(project.ProjectPath)} | Assembly: {project.AssemblyName} | TFM: {project.TargetFramework} | .arxui: {project.ArxuiFiles.Count} | .axaml: {project.AxamlFiles.Count} | indexed types: {workspace.Types.Count}";
@@ -560,6 +646,7 @@ namespace ArxisStudio.Editor.ViewModels
                 {
                     var startupFile = SelectStartupDocument(ProjectArxuiFiles, workspace) ?? ProjectArxuiFiles[0];
                     SelectedProjectFile = startupFile;
+                    SelectedProjectTreeItem = FindTreeItemByPath(startupFile.FullPath, ProjectTreeItems);
                     OpenProjectFile(startupFile);
                 }
             }
@@ -578,12 +665,13 @@ namespace ArxisStudio.Editor.ViewModels
             }
         }
 
-        private void OpenProjectFile(ProjectFileItem file)
+        private void OpenProjectFile(ProjectFileItem file, bool ensureTabSelection = true)
         {
             try
             {
                 ErrorMessage = "";
                 _currentDocumentPath = file.FullPath;
+                EnsureOpenTab(file, ensureTabSelection);
 
                 _suppressJsonTextChanged = true;
                 try
@@ -613,6 +701,122 @@ namespace ArxisStudio.Editor.ViewModels
         }
 
         public bool CanOpenSelectedProjectFile => SelectedProjectFile != null;
+
+        public void OpenSelectedTreeItem()
+        {
+            if (SelectedProjectTreeItem == null)
+            {
+                return;
+            }
+
+            OpenTreeItem(SelectedProjectTreeItem);
+        }
+
+        [RelayCommand]
+        private void OpenTreeItem(ProjectTreeItem? item)
+        {
+            if (item == null || item.IsDirectory)
+            {
+                return;
+            }
+
+            var file = ResolveArxuiFile(item.FullPath);
+
+            if (file == null)
+            {
+                return;
+            }
+
+            SelectedProjectFile = file;
+            SelectedProjectTreeItem = item;
+            OpenProjectFile(file);
+        }
+
+        [RelayCommand]
+        private void RevealTreeItem(ProjectTreeItem? item)
+        {
+            if (item == null)
+            {
+                return;
+            }
+
+            try
+            {
+                if (!File.Exists(item.FullPath) && !Directory.Exists(item.FullPath))
+                {
+                    return;
+                }
+
+                var target = item.IsDirectory ? $"\"{item.FullPath}\"" : $"/select,\"{item.FullPath}\"";
+                var startInfo = new ProcessStartInfo
+                {
+                    FileName = "explorer.exe",
+                    Arguments = target,
+                    UseShellExecute = true
+                };
+                Process.Start(startInfo);
+            }
+            catch (Exception ex)
+            {
+                ErrorMessage = $"Explorer Error: {ex.Message}";
+            }
+        }
+
+        [RelayCommand]
+        private void CloseOpenDocumentTab(OpenDocumentTab? tab)
+        {
+            if (tab == null)
+            {
+                return;
+            }
+
+            var index = OpenDocumentTabs.IndexOf(tab);
+            if (index < 0)
+            {
+                return;
+            }
+
+            var wasActive = SelectedOpenDocumentTab == tab;
+            OpenDocumentTabs.RemoveAt(index);
+
+            if (!wasActive)
+            {
+                return;
+            }
+
+            if (OpenDocumentTabs.Count == 0)
+            {
+                _suppressTabSelectionChanged = true;
+                try
+                {
+                    SelectedOpenDocumentTab = null;
+                }
+                finally
+                {
+                    _suppressTabSelectionChanged = false;
+                }
+                return;
+            }
+
+            var nextIndex = Math.Min(index, OpenDocumentTabs.Count - 1);
+            _suppressTabSelectionChanged = true;
+            try
+            {
+                SelectedOpenDocumentTab = OpenDocumentTabs[nextIndex];
+            }
+            finally
+            {
+                _suppressTabSelectionChanged = false;
+            }
+
+            var file = ResolveArxuiFile(SelectedOpenDocumentTab.FullPath);
+            if (file != null)
+            {
+                SelectedProjectFile = file;
+                SelectedProjectTreeItem = FindTreeItemByPath(file.FullPath, ProjectTreeItems);
+                OpenProjectFile(file, ensureTabSelection: false);
+            }
+        }
 
         private static ProjectFileItem? SelectStartupDocument(IEnumerable<ProjectFileItem> files, WorkspaceContext? workspace)
         {
@@ -825,6 +1029,32 @@ namespace ArxisStudio.Editor.ViewModels
             ErrorMessage = "";
         }
 
+        public void PlaceControlFromDesigner(DesignerPlacementRequest request)
+        {
+            if (request == null)
+            {
+                return;
+            }
+
+            if (!TryFindControlNodeByUiNode(request.ContainerNode, out var containerNode) || containerNode == null)
+            {
+                ErrorMessage = "Drop target container was not found in the current JSON tree.";
+                return;
+            }
+
+            try
+            {
+                var newControlJson = JObject.Parse(request.SerializedNode);
+                ApplyPlacementIntent(containerNode.JsonNode, request.Intent, newControlJson);
+                DesignerService.Instance.NotifyJsonChanged(DesignerChangeKind.Structure);
+                ErrorMessage = "";
+            }
+            catch (Exception ex)
+            {
+                ErrorMessage = $"Drop Placement Error: {ex.Message}";
+            }
+        }
+
         [RelayCommand(CanExecute = nameof(CanDeleteSelectedControl))]
         private void DeleteSelectedControl()
         {
@@ -851,6 +1081,97 @@ namespace ArxisStudio.Editor.ViewModels
                                                SelectedNode.ParentJsonContainer != null && 
                                                SelectedNode.DisplayName != "Root Document";
 
+        private bool TryFindControlNodeByUiNode(UiNode containerNode, out ControlNode? controlNode)
+        {
+            controlNode = null;
+            var path = FindUiNodePath(containerNode);
+            if (path == null)
+            {
+                return false;
+            }
+
+            return _controlNodesByPath.TryGetValue(path, out controlNode);
+        }
+
+        private static void ApplyPlacementIntent(JObject containerJsonNode, DesignPlacementIntent intent, JObject childNodeJson)
+        {
+            var properties = EnsurePropertiesObject(containerJsonNode);
+
+            switch (intent.Kind)
+            {
+                case DesignPlacementKind.SetContent:
+                    properties[intent.SlotName] = childNodeJson;
+                    break;
+                case DesignPlacementKind.InsertChild:
+                case DesignPlacementKind.SetAttachedLayout:
+                {
+                    var collection = EnsureCollectionProperty(properties, intent.SlotName);
+                    if (intent.InsertIndex.HasValue && intent.InsertIndex.Value >= 0 && intent.InsertIndex.Value <= collection.Count)
+                    {
+                        collection.Insert(intent.InsertIndex.Value, childNodeJson);
+                    }
+                    else
+                    {
+                        collection.Add(childNodeJson);
+                    }
+
+                    if (intent.AttachedProperties != null && intent.AttachedProperties.Count > 0)
+                    {
+                        var childProperties = EnsurePropertiesObject(childNodeJson);
+                        foreach (var property in intent.AttachedProperties)
+                        {
+                            childProperties[property.Key] = ToJsonToken(property.Value);
+                        }
+                    }
+
+                    break;
+                }
+            }
+        }
+
+        private static JObject EnsurePropertiesObject(JObject node)
+        {
+            if (node.TryGetValue("Properties", out var existing) && existing is JObject propertiesObject)
+            {
+                return propertiesObject;
+            }
+
+            var created = new JObject();
+            node["Properties"] = created;
+            return created;
+        }
+
+        private static JArray EnsureCollectionProperty(JObject properties, string propertyName)
+        {
+            if (properties.TryGetValue(propertyName, out var existing) && existing is JArray array)
+            {
+                return array;
+            }
+
+            var created = new JArray();
+            properties[propertyName] = created;
+            return created;
+        }
+
+        private static JToken ToJsonToken(UiValue value)
+        {
+            return value switch
+            {
+                ScalarValue scalar => scalar.Value == null ? JValue.CreateNull() : JToken.FromObject(scalar.Value),
+                ResourceValue resource => new JObject { ["$resource"] = resource.Key },
+                UriReferenceValue asset when string.IsNullOrWhiteSpace(asset.Assembly) => new JObject { ["$asset"] = asset.Path },
+                UriReferenceValue asset => new JObject
+                {
+                    ["$asset"] = new JObject
+                    {
+                        ["Path"] = asset.Path,
+                        ["Assembly"] = asset.Assembly
+                    }
+                },
+                _ => JValue.CreateNull()
+            };
+        }
+
         private void AppendRunOutput(string? line)
         {
             if (string.IsNullOrWhiteSpace(line))
@@ -864,6 +1185,118 @@ namespace ArxisStudio.Editor.ViewModels
                     ? line
                     : $"{RunOutput}{Environment.NewLine}{line}";
             });
+        }
+
+        private void EnsureOpenTab(ProjectFileItem file, bool ensureTabSelection)
+        {
+            var tab = OpenDocumentTabs.FirstOrDefault(openTab =>
+                string.Equals(openTab.FullPath, file.FullPath, StringComparison.OrdinalIgnoreCase));
+
+            if (tab == null)
+            {
+                tab = new OpenDocumentTab(file.FullPath);
+                OpenDocumentTabs.Add(tab);
+            }
+
+            if (!ensureTabSelection)
+            {
+                return;
+            }
+
+            _suppressTabSelectionChanged = true;
+            try
+            {
+                SelectedOpenDocumentTab = tab;
+            }
+            finally
+            {
+                _suppressTabSelectionChanged = false;
+            }
+        }
+
+        private ProjectFileItem? ResolveArxuiFile(string fullPath)
+        {
+            if (!fullPath.EndsWith(".arxui", StringComparison.OrdinalIgnoreCase))
+            {
+                return null;
+            }
+
+            return ProjectArxuiFiles.FirstOrDefault(projectFile =>
+                string.Equals(projectFile.FullPath, fullPath, StringComparison.OrdinalIgnoreCase));
+        }
+
+        private void BuildProjectTree(string projectDirectory)
+        {
+            ProjectTreeItems.Clear();
+
+            if (string.IsNullOrWhiteSpace(projectDirectory) || !Directory.Exists(projectDirectory))
+            {
+                return;
+            }
+
+            var root = BuildTreeItem(projectDirectory);
+            ProjectTreeItems.Add(root);
+        }
+
+        private static ProjectTreeItem BuildTreeItem(string path)
+        {
+            var isDirectory = Directory.Exists(path);
+            var name = isDirectory ? new DirectoryInfo(path).Name : Path.GetFileName(path);
+            var kind = isDirectory ? "folder" : Path.GetExtension(path).TrimStart('.').ToLowerInvariant();
+            var item = new ProjectTreeItem(name, path, isDirectory, kind);
+
+            if (!isDirectory)
+            {
+                return item;
+            }
+
+            var directories = Directory.GetDirectories(path)
+                .Where(directory => !IsIgnoredDirectory(directory))
+                .OrderBy(directory => directory, StringComparer.OrdinalIgnoreCase);
+
+            foreach (var directory in directories)
+            {
+                item.Children.Add(BuildTreeItem(directory));
+            }
+
+            var files = Directory.GetFiles(path)
+                .OrderBy(file => file, StringComparer.OrdinalIgnoreCase);
+
+            foreach (var file in files)
+            {
+                item.Children.Add(BuildTreeItem(file));
+            }
+
+            return item;
+        }
+
+        private static bool IsIgnoredDirectory(string directoryPath)
+        {
+            var name = Path.GetFileName(directoryPath);
+            return string.Equals(name, "bin", StringComparison.OrdinalIgnoreCase)
+                   || string.Equals(name, "obj", StringComparison.OrdinalIgnoreCase)
+                   || string.Equals(name, ".git", StringComparison.OrdinalIgnoreCase)
+                   || string.Equals(name, ".idea", StringComparison.OrdinalIgnoreCase)
+                   || string.Equals(name, ".vs", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static ProjectTreeItem? FindTreeItemByPath(string fullPath, IEnumerable<ProjectTreeItem> nodes)
+        {
+            foreach (var node in nodes)
+            {
+                if (string.Equals(node.FullPath, fullPath, StringComparison.OrdinalIgnoreCase))
+                {
+                    return node;
+                }
+
+                var child = FindTreeItemByPath(fullPath, node.Children);
+                if (child != null)
+                {
+                    return child;
+                }
+            }
+
+            return null;
         }
     }
 }

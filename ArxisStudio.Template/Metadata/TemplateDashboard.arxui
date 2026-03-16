@@ -122,9 +122,9 @@
                                   "TypeName": "Avalonia.Controls.Button",
                                   "Properties": {
                                     "Classes": "primary-action",
-                                    "MinWidth": 140,
+                                    "MinWidth": 170,
                                     "HorizontalAlignment": "Left",
-                                    "Content": "Открыть проект"
+                                    "Content": "Открыть"
                                   },
                                   "$design": {
                                     "IgnorePreviewInput": true,

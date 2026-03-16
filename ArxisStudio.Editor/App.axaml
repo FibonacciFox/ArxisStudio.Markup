@@ -8,6 +8,16 @@
     <Application.DataTemplates>
         <editor:ViewLocator/>
     </Application.DataTemplates>
+
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceInclude Source="avares://ArxisStudio.Designer/Themes/Styles/DesignEditor.axaml" />
+                <ResourceInclude Source="avares://ArxisStudio.Designer/Themes/Styles/DesignEditorItem.axaml" />
+                <ResourceInclude Source="avares://ArxisStudio.Designer/Themes/Styles/ResizeAdorner.axaml" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Application.Resources>
   
     <Application.Styles>
         <FluentTheme />
